@@ -1,0 +1,6 @@
+numpy
+tqdm
+FlagEmbedding
+scikit-learn
+google-genai
+torch

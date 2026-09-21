@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Văn bản pháp luật Lao động</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+            rel="stylesheet" />
+        <style>
+            :root {
+                --primary: #1a5276;
+                --primary-light: #2980b9;
+                --accent: #e67e22;
+                --bg: #f4f7fa;
+                --card: #ffffff;
+                --text: #2c3e50;
+                --text-muted: #7f8c8d;
+                --border: #e1e8ed;
+                --shadow: 0 4px 20px rgba(26, 82, 118, 0.08);
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Be Vietnam Pro", sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                line-height: 1.7;
+            }
+
+            header {
+                background: linear-gradient(
+                    135deg,
+                    var(--primary) 0%,
+                    var(--primary-light) 100%
+                );
+                color: white;
+                padding: 3rem 1.5rem 4rem;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+
+            header::before {
+                content: "";
+                position: absolute;
+                top: -50%;
+                right: -10%;
+                width: 400px;
+                height: 400px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 50%;
+            }
+
+            header h1 {
+                font-size: 2.2rem;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+                position: relative;
+            }
+
+            header p {
+                font-size: 1.05rem;
+                opacity: 0.9;
+                max-width: 600px;
+                margin: 0 auto;
+                position: relative;
+            }
+
+            .container {
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 0 1.5rem;
+            }
+
+            .intro {
+                background: var(--card);
+                border-radius: 12px;
+                padding: 2rem;
+                margin-top: -2rem;
+                box-shadow: var(--shadow);
+                position: relative;
+                z-index: 1;
+            }
+
+            .intro h2 {
+                color: var(--primary);
+                font-size: 1.3rem;
+                margin-bottom: 1rem;
+            }
+
+            section {
+                margin: 2.5rem 0;
+            }
+
+            section > h2 {
+                color: var(--primary);
+                font-size: 1.4rem;
+                margin-bottom: 1.2rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 3px solid var(--accent);
+                display: inline-block;
+            }
+
+            .doc-list {
+                display: grid;
+                gap: 1rem;
+            }
+
+            .doc-card {
+                background: var(--card);
+                border-radius: 10px;
+                padding: 1.5rem;
+                box-shadow: var(--shadow);
+                border-left: 4px solid var(--primary-light);
+                transition:
+                    transform 0.2s,
+                    box-shadow 0.2s;
+            }
+
+            .doc-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 30px rgba(26, 82, 118, 0.12);
+            }
+
+            .doc-card h3 {
+                color: var(--primary);
+                font-size: 1.05rem;
+                margin-bottom: 0.4rem;
+            }
+
+            .doc-card .meta {
+                font-size: 0.85rem;
+                color: var(--text-muted);
+                margin-bottom: 0.6rem;
+            }
+
+            .doc-card p {
+                font-size: 0.95rem;
+                color: var(--text);
+            }
+
+            .tag {
+                display: inline-block;
+                background: #ebf5fb;
+                color: var(--primary-light);
+                font-size: 0.75rem;
+                font-weight: 600;
+                padding: 0.2rem 0.6rem;
+                border-radius: 4px;
+                margin-right: 0.4rem;
+            }
+
+            .highlights {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 1rem;
+            }
+
+            .highlight-item {
+                background: var(--card);
+                border-radius: 10px;
+                padding: 1.5rem;
+                box-shadow: var(--shadow);
+                text-align: center;
+            }
+
+            .highlight-item .icon {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .highlight-item h3 {
+                color: var(--primary);
+                font-size: 1rem;
+                margin-bottom: 0.4rem;
+            }
+
+            .highlight-item p {
+                font-size: 0.9rem;
+                color: var(--text-muted);
+            }
+
+            .search-box {
+                background: var(--card);
+                border-radius: 10px;
+                padding: 1.5rem;
+                box-shadow: var(--shadow);
+                margin-bottom: 1.5rem;
+            }
+
+            .search-box input {
+                width: 100%;
+                padding: 0.8rem 1rem;
+                border: 2px solid var(--border);
+                border-radius: 8px;
+                font-family: inherit;
+                font-size: 0.95rem;
+                outline: none;
+                transition: border-color 0.2s;
+            }
+
+            .search-box input:focus {
+                border-color: var(--primary-light);
+            }
+
+            .search-box input::placeholder {
+                color: var(--text-muted);
+            }
+
+            footer {
+                background: var(--primary);
+                color: rgba(255, 255, 255, 0.85);
+                text-align: center;
+                padding: 2rem 1.5rem;
+                margin-top: 3rem;
+                font-size: 0.9rem;
+            }
+
+            footer a {
+                color: white;
+                text-decoration: underline;
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            @media (max-width: 600px) {
+                header h1 {
+                    font-size: 1.6rem;
+                }
+
+                .intro {
+                    padding: 1.5rem;
+                }
+            }
+
+            /* =========================
+   CHATBOT
+   ========================= */
+
+            .chatbot-button {
+                position: fixed;
+                right: 25px;
+                bottom: 25px;
+                width: 60px;
+                height: 60px;
+                border: none;
+                border-radius: 50%;
+                background: var(--primary);
+                color: white;
+                font-size: 28px;
+                cursor: pointer;
+                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+                z-index: 1000;
+            }
+
+            .chatbot-button:hover {
+                transform: scale(1.05);
+            }
+
+            .chatbot-box {
+                position: fixed;
+                right: 25px;
+                bottom: 95px;
+                width: 380px;
+                height: 520px;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 8px 35px rgba(0, 0, 0, 0.2);
+                overflow: hidden;
+                display: none;
+                flex-direction: column;
+                z-index: 9999;
+            }
+
+            .chatbot-header {
+                height: 60px;
+                background: var(--primary);
+                color: white;
+                padding: 0 18px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                cursor: pointer;
+            }
+
+            .chatbot-header h3 {
+                font-size: 1rem;
+                margin: 0;
+            }
+
+            .chatbot-header span {
+                font-size: 20px;
+            }
+
+            .chatbot-messages {
+                flex: 1;
+                padding: 15px;
+                overflow-y: auto;
+                background: #f4f7fa;
+            }
+
+            .bot-message,
+            .user-message {
+                max-width: 80%;
+                padding: 10px 13px;
+                margin-bottom: 10px;
+                border-radius: 10px;
+                font-size: 0.9rem;
+            }
+
+            .bot-message {
+                background: white;
+                border: 1px solid var(--border);
+                margin-right: auto;
+            }
+
+            .user-message {
+                background: var(--primary-light);
+                color: white;
+                margin-left: auto;
+            }
+
+            .chatbot-input {
+                display: flex;
+                padding: 12px;
+                border-top: 1px solid var(--border);
+                background: white;
+            }
+
+            .chatbot-input input {
+                flex: 1;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 10px;
+                outline: none;
+                font-family: inherit;
+            }
+
+            .chatbot-input button {
+                width: 45px;
+                margin-left: 8px;
+                border: none;
+                border-radius: 8px;
+                background: var(--primary);
+                color: white;
+                cursor: pointer;
+                font-size: 18px;
+            }
+
+            @media (max-width: 600px) {
+                .chatbot-box {
+                    right: 10px;
+                    bottom: 80px;
+                    width: calc(100% - 20px);
+                    height: 70vh;
+                }
+
+                .chatbot-button {
+                    right: 15px;
+                    bottom: 15px;
+                }
+            }
+        </style>
+        <base target="_blank" />
+    </head>
+
+    <body>
+        <header>
+            <h1>📋 Văn bản Pháp luật Lao động</h1>
+            <p>
+                Tra cứu các văn bản pháp luật về lao động, tiền lương, bảo hiểm
+                xã hội và quyền lợi ngườ lao động tại Việt Nam
+            </p>
+        </header>
+
+        <div class="container">
+            <div class="intro">
+                <h2>Giới thiệu</h2>
+                <p>
+                    Hệ thống pháp luật lao động Việt Nam được xây dựng trên cơ
+                    sở <strong>Bộ luật Lao động 2019</strong>
+                    và các văn bản hướng dẫn thi hành. Các văn bản này quy định
+                    về quyền và nghĩa vụ của ngườ lao động, ngườ sử dụng lao
+                    động, hợp đồng lao động, tiền lương, thờ giờ làm việc, nghỉ
+                    ngơi và giải quyết tranh chấp lao động.
+                </p>
+            </div>
+
+            <section>
+                <h2>Điểm nổi bật</h2>
+                <div class="highlights">
+                    <div class="highlight-item">
+                        <div class="icon">⏰</div>
+                        <h3>Thờ giờ làm việc</h3>
+                        <p>
+                            Tối đa 8 giờ/ngày, 48 giờ/tuần. Làm thêm tối đa 300
+                            giờ/năm.
+                        </p>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="icon">💰</div>
+                        <h3>Tiền lương tối thiểu</h3>
+                        <p>
+                            Mức lương tối thiểu vùng được áp dụng theo quy định
+                            của Chính phủ.
+                        </p>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="icon">🏖️</div>
+                        <h3>Nghỉ phép năm</h3>
+                        <p>
+                            12 ngày/năm, tăng thêm 1 ngày cho mỗi 5 năm làm
+                            việc.
+                        </p>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="icon">🛡️</div>
+                        <h3>Bảo hiểm xã hội</h3>
+                        <p>
+                            Bắt buộc tham gia BHXH, BHYT, BHTN cho ngườ lao
+                            động.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Danh mục văn bản</h2>
+
+                <div class="search-box">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="🔍 Tìm kiếm văn bản theo tên, số hiệu hoặc nội dung..." />
+                </div>
+
+                <div class="doc-list" id="docList">
+                    <div
+                        class="doc-card"
+                        data-keywords="bộ luật lao động 2019 hợp đồng tiền lương">
+                        <span class="tag">Luật</span>
+                        <h3>Bộ luật Lao động số 45/2019/QH14</h3>
+                        <div class="meta">
+                            Ban hành: 20/11/2019 &nbsp;|&nbsp; Hiệu lực:
+                            01/01/2021
+                        </div>
+                        <p>
+                            Văn bản pháp luật cơ bản, toàn diện nhất về lao
+                            động, quy định quyền và nghĩa vụ của ngườ lao động,
+                            ngườ sử dụng lao động, hợp đồng lao động, tiền
+                            lương, thờ giờ làm việc, nghỉ ngơi.
+                        </p>
+                    </div>
+
+                    <div
+                        class="doc-card"
+                        data-keywords="bảo hiểm xã hội bhxh bhyt bhtn">
+                        <span class="tag">Luật</span>
+                        <h3>Luật Bảo hiểm xã hội số 58/2014/QH13</h3>
+                        <div class="meta">
+                            Ban hành: 20/11/2014 &nbsp;|&nbsp; Sửa đổi: Luật
+                            41/2024/QH15
+                        </div>
+                        <p>
+                            Quy định về bảo hiểm xã hội bắt buộc, bảo hiểm xã
+                            hội tự nguyện, quyền và nghĩa vụ của ngườ tham gia
+                            bảo hiểm xã hội.
+                        </p>
+                    </div>
+
+                    <div
+                        class="doc-card"
+                        data-keywords="nghị định 145 hướng dẫn bộ luật lao động">
+                        <span class="tag">Nghị định</span>
+                        <h3>Nghị định 145/2020/NĐ-CP</h3>
+                        <div class="meta">
+                            Ban hành: 14/12/2020 &nbsp;|&nbsp; Hiệu lực:
+                            01/02/2021
+                        </div>
+                        <p>
+                            Quy định chi tiết một số điều của Bộ luật Lao động
+                            về lao động là ngườ Việt Nam làm việc cho tổ chức,
+                            cá nhân nước ngoài tại Việt Nam.
+                        </p>
+                    </div>
+
+                    <div
+                        class="doc-card"
+                        data-keywords="nghị định 152 hướng dẫn lao động">
+                        <span class="tag">Nghị định</span>
+                        <h3>Nghị định 152/2020/NĐ-CP</h3>
+                        <div class="meta">
+                            Ban hành: 30/12/2020 &nbsp;|&nbsp; Hiệu lực:
+                            01/02/2021
+                        </div>
+                        <p>
+                            Hướng dẫn chi tiết thi hành một số điều của Bộ luật
+                            Lao động về hợp đồng lao động, thỏa ước lao động tập
+                            thể và quy chế lao động.
+                        </p>
+                    </div>
+
+                    <div
+                        class="doc-card"
+                        data-keywords="nghị định 135 tiền lương tối thiểu vùng">
+                        <span class="tag">Nghị định</span>
+                        <h3>Nghị định 38/2022/NĐ-CP (sửa đổi NĐ 135/2020)</h3>
+                        <div class="meta">Ban hành: 17/06/2022</div>
+                        <p>
+                            Quy định mức lương tối thiểu đối với ngườ lao động
+                            làm việc theo hợp đồng lao động, áp dụng theo vùng
+                            I, II, III, IV.
+                        </p>
+                    </div>
+
+                    <div
+                        class="doc-card"
+                        data-keywords="thông tư 10 hướng dẫn lao động">
+                        <span class="tag">Thông tư</span>
+                        <h3>Thông tư 10/2020/TT-BLĐTBXH</h3>
+                        <div class="meta">
+                            Ban hành: 12/11/2020 &nbsp;|&nbsp; Hiệu lực:
+                            01/02/2021
+                        </div>
+                        <p>
+                            Hướng dẫn thi hành một số điều của Bộ luật Lao động
+                            về nội quy lao động, thỏa ước lao động tập thể và
+                            đối thoại tại nơi làm việc.
+                        </p>
+                    </div>
+
+                    <div
+                        class="doc-card"
+                        data-keywords="luật nghị viện công đoàn">
+                        <span class="tag">Luật</span>
+                        <h3>Luật Công đoàn số 12/2012/QH13</h3>
+                        <div class="meta">Ban hành: 20/06/2012</div>
+                        <p>
+                            Quy định về tổ chức, hoạt động của Công đoàn, vai
+                            trò đại diện, bảo vệ quyền và lợi ích hợp pháp của
+                            ngườ lao động.
+                        </p>
+                    </div>
+
+                    <div
+                        class="doc-card"
+                        data-keywords="luật an toàn vệ sinh lao động">
+                        <span class="tag">Luật</span>
+                        <h3>Luật An toàn, vệ sinh lao động số 84/2015/QH13</h3>
+                        <div class="meta">
+                            Ban hành: 25/06/2015 &nbsp;|&nbsp; Hiệu lực:
+                            01/07/2016
+                        </div>
+                        <p>
+                            Quy định về tiêu chuẩn, quy chuẩn kỹ thuật về an
+                            toàn, vệ sinh lao động; quyền và nghĩa vụ của ngườ
+                            lao động, ngườ sử dụng lao động.
+                        </p>
+                    </div>
+                </div>
+
+                <p
+                    id="noResult"
+                    class="hidden"
+                    style="
+                        text-align: center;
+                        color: var(--text-muted);
+                        padding: 2rem;
+                    ">
+                    Không tìm thấy văn bản phù hợp.
+                </p>
+            </section>
+        </div>
+
+        <!-- CHATBOT -->
+        <div class="chatbot-box" id="chatbotBox">
+            <div class="chatbot-header" id="chatbotHeader">
+                <h3>🤖 Chatbot pháp luật</h3>
+                <span>−</span>
+            </div>
+
+            <div class="chatbot-messages" id="chatbotMessages">
+                <div class="bot-message">
+                    Xin chào! 👋<br />
+                    Tôi có thể hỗ trợ bạn tra cứu các vấn đề về pháp luật lao
+                    động.
+                </div>
+            </div>
+
+            <div class="chatbot-input">
+                <input
+                    type="text"
+                    id="chatbotInput"
+                    placeholder="Nhập câu hỏi..." />
+                <button id="chatbotSend">➤</button>
+            </div>
+        </div>
+
+        <button class="chatbot-button" id="chatbotButton" title="Mở chatbot">
+            🤖
+        </button>
+
+        <footer>
+            <p>
+                Trang web tham khảo &nbsp;|&nbsp; Thông tin mang tính giới
+                thiệu, không thay thế tư vấn pháp lý chính thức.
+            </p>
+            <p style="margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.7">
+                Nguồn tham khảo:
+                <a href="https://vbpl.vn" target="_blank">vbpl.vn</a> — Cơ sở dữ
+                liệu Quốc gia về văn bản pháp luật
+            </p>
+        </footer>
+
+        <script>
+            // =========================
+            // TÌM KIẾM VĂN BẢN
+            // =========================
+            const searchInput = document.getElementById("searchInput");
+            const docCards = document.querySelectorAll(".doc-card");
+            const noResult = document.getElementById("noResult");
+
+            searchInput.addEventListener("input", function () {
+                const query = this.value.toLowerCase().trim();
+                let visible = 0;
+
+                docCards.forEach((card) => {
+                    const text = (
+                        card.textContent +
+                        " " +
+                        card.dataset.keywords
+                    ).toLowerCase();
+                    const match = !query || text.includes(query);
+                    card.classList.toggle("hidden", !match);
+                    if (match) visible++;
+                });
+
+                noResult.classList.toggle("hidden", visible > 0);
+            });
+
+            // =========================
+            // CHATBOT
+            // =========================
+            const chatbotButton = document.getElementById("chatbotButton");
+            const chatbotBox = document.getElementById("chatbotBox");
+            const chatbotHeader = document.getElementById("chatbotHeader");
+            const chatbotMessages = document.getElementById("chatbotMessages");
+            const chatbotInput = document.getElementById("chatbotInput");
+            const chatbotSend = document.getElementById("chatbotSend");
+
+            // Mở / đóng chatbot
+            chatbotButton.onclick = function () {
+                chatbotBox.style.display = "flex";
+                chatbotButton.style.display = "none";
+            };
+
+            chatbotHeader.onclick = function () {
+                chatbotBox.style.display = "none";
+                chatbotButton.style.display = "block";
+            };
+
+            // Thêm tin nhắn vào khung chat
+            function addMessage(text, isUser) {
+                const div = document.createElement("div");
+                div.className = isUser ? "user-message" : "bot-message";
+                div.textContent = text;
+                chatbotMessages.appendChild(div);
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+                return div;
+            }
+
+            // Gửi câu hỏi tới backend Flask
+            async function sendMessage() {
+                const text = chatbotInput.value.trim();
+                if (!text) return;
+
+                addMessage(text, true);
+                chatbotInput.value = "";
+
+                const loadingEl = addMessage("⏳ Đang trả lời...", false);
+
+                try {
+                    const res = await fetch("/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message: text }),
+                    });
+
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+
+                    const data = await res.json();
+
+                    // Hiển thị câu trả lời (giữ xuống dòng)
+                    loadingEl.innerHTML = data.answer.replace(/\n/g, "<br>");
+                } catch (err) {
+                    loadingEl.textContent =
+                        "⚠️ Có lỗi xảy ra, vui lòng thử lại sau.";
+                }
+
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            }
+
+            chatbotSend.onclick = sendMessage;
+
+            chatbotInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") sendMessage();
+            });
+        </script>
+    </body>
+</html>
