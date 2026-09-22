@@ -19,3 +19,5 @@ env/
 
 # Windows
 Thumbs.dbembeddings_output/
+embeddings_output/embeddings.npy
+embeddings_output/embeddings.npy
