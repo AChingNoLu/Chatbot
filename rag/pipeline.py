@@ -1,10 +1,12 @@
-"""Reflection -> routing -> Qdrant Top 20 -> rerank Top 5 -> grounded Gemini answer."""
+"""Reflection -> routing -> Qdrant Top 20 -> rerank Top 5 -> grounded Groq answer."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from typing import Any
 
 from rag.prompt import INSUFFICIENT, RESPONSE_SCHEMA, SYSTEM_INSTRUCTION, build_prompt, render_answer
@@ -40,43 +42,54 @@ class RagPipeline:
 
 
 def main(argv: list[str] | None = None) -> int:
-    from embeddings.bge_m3 import BgeM3Embedder
-    from embeddings.bge_reranker import CrossEncoderReranker
-    from llm.groq import GroqClient
-    from retrieval.qdrant_store import QdrantStore
-    from retrieval.retriever import RerankingRetriever, Retriever
-    from router.semantic_router import DOMAINS, SemanticRouter
+    from router.semantic_router import DOMAINS
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("question", nargs="?")
-    parser.add_argument("--collection", default="legal_chunks")
+    parser.add_argument("--serve", action="store_true", help="Keep models loaded in a local server")
     parser.add_argument("--domain", choices=DOMAINS)
     parser.add_argument("--doc-type")
     parser.add_argument("--year", type=int)
     parser.add_argument("--status")
     parser.add_argument("--json", action="store_true", help="Include route, Top 20, Top 5 and citations")
     args = parser.parse_args(argv)
-    question = args.question if args.question is not None else input("Câu hỏi: ")
-    llm = store = None
+    if args.serve:
+        from rag.server import serve
+
+        return serve()
+
     try:
-        reflect_question(question)
-        llm = GroqClient()  # Fail early on missing .env, before loading embedding models.
-        embedder = BgeM3Embedder()
-        store = QdrantStore(collection_name=args.collection)
-        retriever = RerankingRetriever(Retriever(embedder, store), CrossEncoderReranker())
-        result = RagPipeline(SemanticRouter(embedder), retriever, llm).answer(
-            question, domain=args.domain, doc_type=args.doc_type, year=args.year, status=args.status,
-        )
-        print(json.dumps(result, ensure_ascii=False, indent=2) if args.json else result["answer"])
+        while True:
+            question = args.question if args.question is not None else input("Cau hoi (exit de thoat): ")
+            if args.question is None and question.strip().lower() == "exit":
+                break
+            result = request_answer(question, domain=args.domain, doc_type=args.doc_type,
+                                    year=args.year, status=args.status)
+            print(json.dumps(result, ensure_ascii=False, indent=2) if args.json else result["answer"])
+            if args.question is not None:
+                break
         return 0
     except (ValueError, RuntimeError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
-    finally:
-        if llm is not None:
-            llm.close()
-        if store is not None:
-            store.client.close()
+
+
+def request_answer(question: str, **filters: Any) -> dict[str, Any]:
+    payload = json.dumps({"question": question, "filters": filters}).encode("utf-8")
+    request = Request(
+        "http://127.0.0.1:8765/answer", data=payload,
+        headers={"Content-Type": "application/json"}, method="POST",
+    )
+    try:
+        with urlopen(request, timeout=300) as response:
+            return json.load(response)
+    except HTTPError as exc:
+        message = json.loads(exc.read().decode("utf-8")).get("error", str(exc))
+        raise RuntimeError(message) from None
+    except URLError:
+        raise RuntimeError(
+            "Local RAG server is not running. Start it with: python -m rag.pipeline --serve"
+        ) from None
 
 
 if __name__ == "__main__":

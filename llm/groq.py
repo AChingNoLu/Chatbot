@@ -53,12 +53,13 @@ class GroqClient:
         schema: dict,
     ) -> Any:
 
-        from groq import Groq
+        from groq import DefaultHttpxClient, Groq
 
         try:
             if self._client is None:
                 self._client = Groq(
-                    api_key=self._api_key
+                    api_key=self._api_key,
+                    http_client=DefaultHttpxClient(trust_env=False),
                 )
 
             response = self._client.chat.completions.create(
@@ -136,4 +137,6 @@ class GroqClient:
 
     def close(self) -> None:
         # Groq client không bắt buộc phải close như Gemini client.
-        self._client = None
+        if self._client is not None:
+            self._client.close()
+            self._client = None

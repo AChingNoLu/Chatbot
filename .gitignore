@@ -18,6 +18,8 @@ env/
 .ipynb_checkpoints/
 
 # Windows
-Thumbs.dbembeddings_output/
-embeddings_output/embeddings.npy
-embeddings_output/embeddings.npy
+Thumbs.db
+
+# Generated retrieval data
+qdrant_storage/
+embeddings_output/

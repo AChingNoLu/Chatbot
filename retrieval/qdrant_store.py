@@ -15,7 +15,7 @@ from dotenv import load_dotenv  # NEW
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 # NEW: load file .env nằm ở thư mục gốc
-load_dotenv(PROJECT_ROOT / ".env")
+load_dotenv(PROJECT_ROOT / ".env", override=True)
 
 
 def deterministic_point_id(chunk_id: str) -> str:
@@ -31,6 +31,7 @@ class QdrantStore:
         collection_name: str = "legal_chunks",
         url: str | None = None,
         api_key: str | None = None,
+        path: str | Path | None = None,
         client: Any | None = None,
     ) -> None:
         try:
@@ -41,13 +42,22 @@ class QdrantStore:
                 "Qdrant storage requires qdrant-client."
             ) from exc
 
-        self.client = client or QdrantClient(
-            url=url or os.getenv(
-                "QDRANT_URL",
-                "http://localhost:6333"
-            ),
-            api_key=api_key or os.getenv("QDRANT_API_KEY"),
-        )
+        if client is not None:
+            self.client = client
+        else:
+            qdrant_url = url or os.getenv("QDRANT_URL")
+            if qdrant_url:
+                self.client = QdrantClient(
+                    url=qdrant_url,
+                    api_key=api_key or os.getenv("QDRANT_API_KEY"),
+                )
+            else:
+                storage_path = Path(
+                    path or os.getenv("QDRANT_PATH", "qdrant_storage")
+                )
+                if not storage_path.is_absolute():
+                    storage_path = PROJECT_ROOT / storage_path
+                self.client = QdrantClient(path=str(storage_path))
 
         self.collection_name = collection_name
         self._vector_params = VectorParams

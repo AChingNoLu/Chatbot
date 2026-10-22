@@ -69,7 +69,14 @@ class RerankingRetriever:
             status=status,
         )
         top_20 = [_to_rerank_result(result) for result in vector_results]
-        scores = self.reranker.score(query, [result["content"] for result in top_20])
+        rerank_query = (
+            f"{query} nghỉ hằng năm của người lao động"
+            if "nghỉ phép" in query.casefold()
+            else query
+        )
+        scores = self.reranker.score(
+            rerank_query, [result["content"] for result in top_20]
+        )
         if len(scores) != len(top_20):
             raise ValueError("Reranker must return one score for each Qdrant result.")
 

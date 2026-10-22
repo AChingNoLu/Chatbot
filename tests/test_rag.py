@@ -31,11 +31,13 @@ class RagTests(unittest.TestCase):
         self.router.route.return_value = {"intent": "legal_question", "domain": None, "confidence": 0.2}
         self.retriever.search.return_value = ([chunk()], [chunk()])
         self.llm.generate.return_value = {
-            "sufficient": True, "evidence": [{"chunk_id": "c1", "quote": chunk()["content"]}],
+            "sufficient": True,
+            "answer": "Test answer.",
+            "evidence": [{"chunk_id": "c1", "quote": chunk()["content"]}],
         }
         self.pipeline = RagPipeline(self.router, self.retriever, self.llm)
 
-    def test_reflection_router_qdrant_reranker_prompt_gemini_order(self):
+    def test_reflection_router_qdrant_reranker_prompt_groq_order(self):
         events = []
         def route(query):
             self.assertEqual(query, "Câu hỏi?")
@@ -59,17 +61,21 @@ class RagTests(unittest.TestCase):
             self.assertEqual(len(contents), 20)
             return list(range(20))
         def generate(prompt, **kwargs):
-            events.append("gemini")
+            events.append("groq")
             context = json.loads(prompt)["retrieved_context"]
             self.assertEqual([item["chunk_id"] for item in context], [f"c{i}" for i in range(19, 14, -1)])
             self.assertIn("retrieved_context", kwargs["system_instruction"])
-            return {"sufficient": True, "evidence": [{"chunk_id": "c19", "quote": context[0]["content"]}]}
+            return {
+                "sufficient": True,
+                "answer": "Test answer.",
+                "evidence": [{"chunk_id": "c19", "quote": context[0]["content"]}],
+            }
         self.router.route.side_effect = route
         self.llm.generate.side_effect = generate
         store = SimpleNamespace(collection_name="test", client=SimpleNamespace(query_points=query_points))
         retriever = RerankingRetriever(Retriever(SimpleNamespace(encode=encode), store), SimpleNamespace(score=score))
         result = RagPipeline(self.router, retriever, self.llm).answer("  Câu hỏi?\r\n")
-        self.assertEqual(events, ["router", "embed", "qdrant", "rerank", "gemini"])
+        self.assertEqual(events, ["router", "embed", "qdrant", "rerank", "groq"])
         self.assertEqual(result["status"], "answered")
         self.assertEqual(len(result["top_20_before_rerank"]), 20)
         self.assertEqual(len(result["top_5_after_rerank"]), 5)
@@ -96,7 +102,11 @@ class RagTests(unittest.TestCase):
         self.llm.generate.assert_not_called()
 
     def test_model_declares_context_insufficient(self):
-        self.llm.generate.return_value = {"sufficient": False, "evidence": []}
+        self.llm.generate.return_value = {
+            "sufficient": False,
+            "answer": INSUFFICIENT,
+            "evidence": [],
+        }
         result = self.pipeline.answer("question")
         self.assertEqual(result["answer"], INSUFFICIENT)
         self.assertEqual(result["citations"], [])

@@ -1,67 +1,73 @@
-# Chạy RAG
+# Chạy RAG local
 
-Tại thư mục gốc project:
+Pipeline dùng Qdrant local, BGE-M3 để tạo embedding, reranker để chọn ngữ cảnh và Groq để sinh câu trả lời. Server giữ hai mô hình trong bộ nhớ nên mỗi câu hỏi không phải nạp lại mô hình.
+
+## Cài đặt
+
+Tại thư mục gốc dự án:
 
 ```powershell
-python -m pip install -r requiremnts.txt
-python -m rag.pipeline "Điều kiện có hiệu lực của hợp đồng dân sự là gì?" --collection legal_chunks
+python -m pip install -r requirements.txt
 ```
 
-Lệnh cần Qdrant có collection đã index và hai model BGE-M3/reranker.
-Model có thể được tải lần đầu. Không cần tạo lại chunk hay re-index chỉ để dùng RAG.
-Bỏ câu hỏi khỏi lệnh để CLI hỏi tại terminal.
-
-Tạo hoặc sửa file `.env` ở thư mục gốc (tham khảo `.env.example`):
+Cấu hình `.env`:
 
 ```dotenv
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.5-flash
+GROQ_API_KEY=your_key_here
+GROQ_MODEL=openai/gpt-oss-20b
+QDRANT_URL=
+QDRANT_PATH=qdrant_storage
 ```
 
-Điền key thật sau `GEMINI_API_KEY=` trong `.env` trên máy của bạn. Không commit file
-này. Nếu đã có `.env`, giữ nguyên cấu hình khác. `GOOGLE_API_KEY` trong file cũng
-được hỗ trợ. Key chỉ đọc từ file, không lấy từ biến môi trường shell hay nội suy
-`${...}`. Model được cấu hình trong cùng file. Pipeline gửi câu hỏi và context đủ
-citation trong Top 5 tới Gemini khi bạn chạy lệnh.
+Không commit `.env`. Khi `QDRANT_URL` để trống, dự án đọc collection từ thư mục `qdrant_storage` thay vì Docker hoặc Qdrant server bên ngoài.
 
-Luồng thực thi:
+## Chạy
 
-1. Reflection chuẩn hoá Unicode/xuống dòng/khoảng trắng ngoài câu hỏi; không thêm
-   dữ kiện, chưa giải tham chiếu theo lịch sử hội thoại.
-2. Router phân loại intent/domain. Confidence thấp không tự hard-filter domain.
-3. Retriever lấy tối đa 20 chunk từ Qdrant; reranker chọn tối đa 5.
-4. Prompt Builder chọn các chunk có tên văn bản, Điều và nguồn trong Top 5.
-5. Gemini đánh giá đủ căn cứ và chọn trích đoạn nguyên văn qua JSON có schema.
-6. Code đối chiếu chunk_id và từng trích đoạn với context, rồi gắn tên văn bản,
-   Điều, Khoản/Điểm nếu có, nguồn từ metadata. Không cho Gemini viết citation.
-
-Đây là câu trả lời dựa trên trích đoạn, không phải phần diễn giải tự do của LLM.
-Kiểm tra code bảo đảm nguồn và nguyên văn; đánh giá mức đủ/liên quan của căn cứ
-vẫn dựa vào Gemini, chưa thay thế Legal Validator về hiệu lực/xung đột pháp luật.
-Không suy ra tên văn bản chính thức từ tên file; nếu `doc_name` hiện là số hiệu
-hoặc tên file, citation sẽ giữ đúng giá trị metadata đó.
-
-Thiếu context/citation, Gemini báo thiếu căn cứ hoặc đầu ra không hợp lệ thì trả:
-“Không tìm thấy đủ thông tin trong dữ liệu để trả lời câu hỏi này.”
-Chitchat trả lời chào cố định. `legal_tool` thông báo cần Rule Engine; pipeline
-chưa thực thi tính toán hoặc quyết định kết quả pháp lý.
-
-Xem query, route, Top 20, Top 5, chunk đã gửi Gemini, chunk bị loại vì thiếu
-metadata, câu trả lời và citation:
+Mở terminal thứ nhất và khởi động server:
 
 ```powershell
-python -m rag.pipeline "Câu hỏi của bạn" --collection legal_chunks --json
+python -m rag.pipeline --serve
 ```
 
-Các filter `--domain`, `--doc-type`, `--year`, `--status` giống CLI retrieval.
-`--domain` là filter chủ động do người dùng chọn. Chạy chatbot Flask/các script
-prototype cũ chưa sử dụng pipeline này.
+Chờ thông báo server sẵn sàng. Giữ terminal này mở để BGE-M3 và reranker chỉ được nạp một lần.
 
-Kiểm tra offline (không gửi dữ liệu, không tải model):
+Mở terminal thứ hai để hỏi đáp tương tác:
 
 ```powershell
-python -m unittest discover -s tests -p test_rag.py -v
-python -m unittest discover -s tests -p test_gemini.py -v
+python -m rag.pipeline
 ```
 
-Adapter sử dụng [structured outputs của Gemini](https://ai.google.dev/gemini-api/docs/structured-output).
+Hoặc gửi một câu hỏi trực tiếp:
+
+```powershell
+python -m rag.pipeline "Điều kiện nghỉ phép là gì?"
+```
+
+Xem đầy đủ route, Top 20, Top 5, câu trả lời và citation:
+
+```powershell
+python -m rag.pipeline "Điều kiện nghỉ phép là gì?" --json
+```
+
+Có thể dùng các bộ lọc `--domain`, `--doc-type`, `--year` và `--status`. Dừng server bằng `Ctrl+C` trước khi chạy tác vụ khác cần mở cùng `QDRANT_PATH`, vì Qdrant local chỉ cho một tiến trình giữ khóa thư mục lưu trữ.
+
+## Luồng xử lý
+
+1. Reflection chuẩn hóa câu hỏi nhưng không tự thêm dữ kiện pháp lý.
+2. Router phân loại intent và domain.
+3. Qdrant lấy tối đa 20 chunk phù hợp.
+4. Reranker chọn tối đa 5 chunk tốt nhất.
+5. Groq trả JSON gồm `sufficient`, `answer` và `evidence`.
+6. Code đối chiếu `chunk_id` và nguyên văn trích dẫn với context trước khi tạo citation.
+
+Nếu context không đủ hoặc đầu ra LLM không hợp lệ, pipeline trả thông báo không tìm thấy đủ thông tin thay vì tự suy đoán căn cứ.
+
+## Kiểm tra offline
+
+```powershell
+python -m unittest discover -s tests -p "test_rag.py" -v
+python -m unittest discover -s tests -p "test_groq.py" -v
+python -m unittest discover -s tests -p "test_rag_server.py" -v
+```
+
+Các test trên dùng mock, không tải mô hình và không gửi dữ liệu tới Groq.

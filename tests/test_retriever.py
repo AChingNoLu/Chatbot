@@ -37,6 +37,7 @@ class FakeClient:
 
 class FakeRetriever:
     def search(self, query, **filters):
+        self.query = query
         return [
             {
                 "chunk_id": f"chunk-{index}",
@@ -56,6 +57,15 @@ class FakeReranker:
 
 
 class RetrieverTests(unittest.TestCase):
+    def test_nghi_phep_expands_only_the_reranker_query(self):
+        retriever = FakeRetriever()
+        reranker = FakeReranker()
+
+        RerankingRetriever(retriever, reranker).search("điều kiện nghỉ phép")
+
+        self.assertEqual(retriever.query, "điều kiện nghỉ phép")
+        self.assertIn("nghỉ hằng năm", reranker.query)
+
     def test_search_returns_shared_shape_and_filters(self):
         client = FakeClient()
         store = SimpleNamespace(client=client, collection_name="legal_chunks")

@@ -1,977 +1,204 @@
-# ⚖️ Legal AI Chatbot — Vietnamese Legal RAG
+# Legal AI
 
-Hệ thống chatbot hỗ trợ **tra cứu văn bản pháp luật Việt Nam** bằng kiến trúc RAG (Retrieval-Augmented Generation).
+Prototype trợ lý pháp luật Việt Nam sử dụng:
 
-Pipeline hiện tại:
+- BGE-M3 để tạo embedding câu hỏi.
+- Qdrant embedded để tìm Top 20 legal chunk.
+- BGE reranker để chọn Top 5.
+- Groq để tạo câu trả lời có kiểm chứng citation.
+- Rule Engine cho các phép tính và kết quả pháp lý xác định.
 
-```text
-Câu hỏi người dùng
-        ↓
-Reflection
-        ↓
-Semantic Router
-        ↓
-BGE-M3 Embedding
-        ↓
-Qdrant — Top 20
-        ↓
-BGE Reranker — Top 5
-        ↓
-Groq LLM
-        ↓
-Câu trả lời + Citation
-```
+Project chạy local, không cần Docker. Qdrant lưu dữ liệu trong `qdrant_storage/`.
 
-Hệ thống hiện hỗ trợ dữ liệu thuộc 6 lĩnh vực:
+## Yêu cầu
 
-* Dân sự
-* Hàng hải
-* Hình sự
-* Lao động
-* Tố tụng dân sự
-* Tố tụng hình sự
+- Python 3.10 trở lên.
+- Kết nối Internet cho lần tải model đầu tiên và khi gọi Groq.
+- API key Groq.
 
----
+## Cài đặt
 
-# 🚀 Chạy nhanh
-
-Nếu chỉ muốn tải project về và chạy chatbot, thực hiện lần lượt các bước dưới đây.
-
-## 1. Yêu cầu
-
-Cần cài:
-
-* Python **3.10 trở lên**
-* Git
-* Docker Desktop
-* Internet trong lần chạy đầu tiên
-* Groq API Key
-
-Kiểm tra Python:
-
-```bash
-python --version
-```
-
-Ví dụ:
-
-```text
-Python 3.10.x
-```
-
----
-
-# 2. Tải project
-
-Clone repository:
-
-```bash
-git clone https://github.com/AChingNoLu/Chatbot.git
-```
-
-Đi vào project:
-
-```bash
-cd Chatbot
-```
-
-Nếu tải bằng **Download ZIP** trên GitHub:
-
-1. Giải nén file ZIP.
-2. Mở CMD/PowerShell tại thư mục `Chatbot`.
-3. Tiếp tục từ bước tạo môi trường Python bên dưới.
-
----
-
-# 3. Tạo môi trường Python
-
-## Windows CMD
-
-```bash
-python -m venv venv
-```
-
-Kích hoạt:
-
-```bash
-venv\Scripts\activate
-```
-
-Sau khi kích hoạt thành công sẽ thấy:
-
-```text
-(venv) C:\...\Chatbot>
-```
-
-## PowerShell
+Tại thư mục gốc project:
 
 ```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
----
+Sao chép `.env.example` thành `.env`, sau đó điền cấu hình trên máy:
 
-# 4. Cài thư viện
-
-Repo hiện tại sử dụng file:
-
-```text
-requiremnts.txt
+```powershell
+Copy-Item .env.example .env
 ```
 
-Cài toàn bộ dependency:
+Các biến được hỗ trợ:
 
-```bash
-python -m pip install --upgrade pip
-pip install -r requiremnts.txt
-```
-
-Các thư viện chính gồm:
-
-```text
-numpy
-tqdm
-FlagEmbedding
-scikit-learn
-google-genai
-torch
-python-dotenv
-qdrant-client
-groq
-```
-
-> Lưu ý: tên file hiện tại là `requiremnts.txt`, không phải `requirements.txt`.
-
----
-
-# 5. Tạo Groq API Key
-
-Pipeline hiện tại sử dụng **Groq** để sinh câu trả lời.
-
-Tạo API Key trên Groq Console, sau đó tạo file:
-
-```text
-.env
-```
-
-ở **thư mục gốc của project**, cùng cấp với `README.md`.
-
-Cấu trúc:
-
-```text
-Chatbot/
-│
-├── .env
-├── README.md
-├── ingestion_output.json
-├── rag/
-├── retrieval/
-├── embeddings/
-├── router/
-└── ...
-```
-
-Nội dung `.env`:
-
-```env
-GROQ_API_KEY=your_groq_api_key_here
+```dotenv
+GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=openai/gpt-oss-20b
 
-QDRANT_URL=http://localhost:6333
+QDRANT_URL=
+QDRANT_PATH=qdrant_storage
+
+# Không bắt buộc nếu model đã có trong cache Hugging Face
+HF_TOKEN=
 ```
 
-Ví dụ:
+Không commit `.env` hoặc API key. Nếu `.env` từng được Git theo dõi, cần đổi API key và bỏ file khỏi index:
 
-```env
-GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxx
-GROQ_MODEL=openai/gpt-oss-20b
-
-QDRANT_URL=http://localhost:6333
+```powershell
+git rm --cached .env
 ```
 
-Không commit `.env` lên GitHub.
+## Chạy chatbot
 
----
+### 1. Khởi động RAG server
 
-# 6. Khởi động Qdrant
+Mở terminal thứ nhất:
 
-Project sử dụng **Qdrant Vector Database**.
-
-Cách đơn giản nhất là dùng Docker Desktop.
-
-Mở Docker Desktop trước.
-
-Sau đó chạy:
-
-```bash
-docker run -d --name legal-qdrant -p 6333:6333 -p 6334:6334 qdrant/qdrant
+```powershell
+python -m rag.pipeline --serve
 ```
 
-Kiểm tra container:
-
-```bash
-docker ps
-```
-
-Nếu Qdrant chạy thành công, mở:
+Chờ thông báo:
 
 ```text
-http://localhost:6333/dashboard
+San sang tai http://127.0.0.1:8765. Nhan Ctrl+C de dung.
 ```
 
-hoặc:
+Server nạp BGE-M3, Qdrant và reranker một lần rồi giữ chúng trong RAM.
 
-```text
-http://localhost:6333
-```
+### 2. Đặt câu hỏi
 
-## Nếu container đã được tạo trước đó
+Mở terminal thứ hai:
 
-Không cần chạy lại `docker run`.
-
-Chỉ cần:
-
-```bash
-docker start legal-qdrant
-```
-
----
-
-# 7. Index dữ liệu vào Qdrant
-
-Repo đã có:
-
-```text
-ingestion_output.json
-```
-
-Đây là dữ liệu legal chunk dùng cho RAG.
-
-Trước lần chạy chatbot đầu tiên, chạy:
-
-```bash
-python -m ingestion.indexer
-```
-
-Hoặc chỉ định rõ:
-
-```bash
-python -m ingestion.indexer ingestion_output.json --collection legal_chunks
-```
-
-Khi thành công sẽ xuất hiện dạng:
-
-```text
-Upserted ... chunks into Qdrant collection legal_chunks
-```
-
-Collection được tạo là:
-
-```text
-legal_chunks
-```
-
-> Bước này chỉ cần chạy lại khi dữ liệu/chunk/embedding thay đổi hoặc Qdrant bị xóa dữ liệu.
-
----
-
-# 8. Chạy chatbot
-
-Sau khi:
-
-* cài dependency,
-* tạo `.env`,
-* bật Qdrant,
-* index dữ liệu,
-
-chạy:
-
-```bash
+```powershell
 python -m rag.pipeline
 ```
 
-Terminal sẽ hiện:
+Nhập nhiều câu hỏi liên tiếp và nhập `exit` để đóng client.
 
-```text
-Câu hỏi:
+Hỏi trực tiếp bằng một lệnh:
+
+```powershell
+python -m rag.pipeline "Người lao động được nghỉ hằng năm bao nhiêu ngày?"
 ```
 
-Ví dụ:
+Xem route, Top 20, Top 5 và citation:
 
-```text
-Câu hỏi: Điều kiện có hiệu lực của hợp đồng dân sự là gì?
-```
-
-Pipeline sẽ thực hiện:
-
-```text
-Reflection
-    ↓
-Semantic Router
-    ↓
-Qdrant Top 20
-    ↓
-BGE Reranker Top 5
-    ↓
-Groq
-    ↓
-Answer + Citation
-```
-
----
-
-# 9. Truyền câu hỏi trực tiếp
-
-Có thể không cần nhập sau khi chương trình chạy:
-
-```bash
-python -m rag.pipeline "Điều kiện có hiệu lực của hợp đồng dân sự là gì?"
-```
-
-Ví dụ khác:
-
-```bash
-python -m rag.pipeline "Người lao động được nghỉ phép bao nhiêu ngày?"
-```
-
----
-
-# 10. Xem toàn bộ kết quả Pipeline
-
-Muốn xem:
-
-* Router chọn intent gì
-* Router chọn domain nào
-* Top 20 từ Qdrant
-* Top 5 sau rerank
-* Citation
-* Chunk được sử dụng
-
-chạy:
-
-```bash
+```powershell
 python -m rag.pipeline "Điều kiện có hiệu lực của hợp đồng dân sự là gì?" --json
 ```
 
----
+Áp dụng filter chủ động:
 
-# 11. Lọc theo lĩnh vực
+```powershell
+python -m rag.pipeline "Quy định về nghỉ hằng năm?" --domain lao_dong
+```
 
-Các domain hiện tại:
+Các filter hỗ trợ: `--domain`, `--doc-type`, `--year`, `--status`.
+
+Server luôn dùng collection mặc định `legal_chunks`.
+
+## Luồng xử lý
 
 ```text
-dan_su
-hang_hai
-hinh_su
-lao_dong
-to_tung_dan_su
-to_tung_hinh_su
+Câu hỏi
+  → Semantic Router
+  → BGE-M3 query embedding
+  → Qdrant Top 20
+  → BGE reranker Top 5
+  → Prompt có legal chunks
+  → Groq structured JSON
+  → kiểm chứng quote và citation
+  → câu trả lời
 ```
 
-Ví dụ chỉ tìm trong luật dân sự:
+Citation chỉ được lấy từ chunk thật trong Top 5. Nếu context thiếu metadata, Groq báo thiếu căn cứ hoặc quote không khớp nguyên văn, pipeline trả kết quả không đủ thông tin thay vì tự tạo citation.
 
-```bash
-python -m rag.pipeline "Điều kiện có hiệu lực của hợp đồng là gì?" --domain dan_su
+## Dữ liệu và indexing
+
+Tạo `ingestion_output.json` từ thư mục `DATA/`:
+
+```powershell
+python -m ingestion.chunker
 ```
 
-Lao động:
+Index chunk vào Qdrant local:
 
-```bash
-python -m rag.pipeline "Quy định về nghỉ phép hằng năm?" --domain lao_dong
+```powershell
+python -m ingestion.indexer ingestion_output.json --collection legal_chunks
 ```
 
-Tố tụng dân sự:
+Hãy dừng RAG server trước khi index. Qdrant embedded chỉ cho một tiến trình mở `qdrant_storage` tại một thời điểm.
 
-```bash
-python -m rag.pipeline "Thời hạn kháng cáo bản án dân sự?" --domain to_tung_dan_su
+Indexing sử dụng ID ổn định nên có thể chạy lại mà không nhân đôi point.
+
+## Truy vấn retrieval riêng
+
+```powershell
+python -m retrieval.retriever "Quy định về nghỉ hằng năm?" --domain lao_dong
 ```
 
----
+Lệnh này cũng mở Qdrant trực tiếp, vì vậy không chạy đồng thời với RAG server.
 
-# 12. Các bộ lọc khác
+## Kiểm tra
 
-Pipeline hỗ trợ:
+Chạy các nhóm test của luồng hiện tại:
+
+```powershell
+python -m unittest discover -s tests -p "test_qdrant_store.py"
+python -m unittest discover -s tests -p "test_retriever.py"
+python -m unittest discover -s tests -p "test_router.py"
+python -m unittest discover -s tests -p "test_rag_server.py"
+python -m unittest discover -s tests -p "test_groq.py"
+```
+
+## Lỗi thường gặp
+
+### Server chưa chạy
 
 ```text
---domain
---doc-type
---year
---status
---collection
---json
+Local RAG server is not running
 ```
 
-Ví dụ:
+Khởi động bằng `python -m rag.pipeline --serve`. Phải viết liền `--serve`, không phải `-- serve`.
 
-```bash
-python -m rag.pipeline "Quy định về hợp đồng?" --domain dan_su --year 2015
-```
+### Qdrant báo `.lock`
 
-Hoặc:
+Một tiến trình khác đang mở `qdrant_storage`. Đóng terminal Python cũ hoặc nhấn `Ctrl+C` ở RAG server trước khi mở tiến trình Qdrant khác.
 
-```bash
-python -m rag.pipeline "Quy định về người lao động?" --domain lao_dong --status "Còn hiệu lực"
-```
+Không xóa `.lock` khi tiến trình Qdrant vẫn chạy.
 
----
+### Groq `APIConnectionError`
 
-# ⚡ Lần sau chạy lại
+Kiểm tra Internet và API key. Adapter Groq bỏ qua biến proxy môi trường để tránh proxy local lỗi chặn kết nối.
 
-Sau khi đã cài project và index Qdrant một lần, thông thường chỉ cần:
+### Câu trả lời báo không đủ thông tin
 
-## Bước 1 — mở Docker Desktop
+Chạy lại với `--json` để kiểm tra Top 20, Top 5 và các chunk bị loại. Viết câu hỏi bằng thuật ngữ pháp lý cụ thể, ví dụ dùng “nghỉ hằng năm” thay vì chỉ “nghỉ phép”.
 
-Sau đó:
-
-```bash
-docker start legal-qdrant
-```
-
-Nếu container đang chạy thì có thể bỏ qua.
-
-## Bước 2 — kích hoạt venv
-
-```bash
-venv\Scripts\activate
-```
-
-## Bước 3 — chạy chatbot
-
-```bash
-python -m rag.pipeline
-```
-
-Tức là:
+## Cấu trúc chính
 
 ```text
-Docker/Qdrant
-      ↓
-venv
-      ↓
-python -m rag.pipeline
+ingestion/       đọc, làm sạch, chunk và index văn bản
+embeddings/      BGE-M3 và reranker
+retrieval/       Qdrant adapter và retrieval
+router/          phân loại intent và lĩnh vực
+rag/             reflection, prompt, server và pipeline
+legal_tools/     adapter công cụ pháp lý
+rules/           Rule Engine xác định
+llm/             Groq adapter
+tests/           test local
+DATA/            văn bản nguồn
+qdrant_storage/  dữ liệu Qdrant local, không commit
 ```
 
----
-
-# 📁 Cấu trúc project
-
-```text
-Chatbot/
-│
-├── DATA/
-│   └── Văn bản pháp luật gốc
-│
-├── embeddings/
-│   ├── bge_m3.py
-│   └── bge_reranker.py
-│
-├── embeddings_output/
-│   └── embeddings.npy
-│
-├── ingestion/
-│   └── indexer.py
-│
-├── legal_tools/
-│   ├── dan_su/
-│   └── lao_dong/
-│
-├── llm/
-│   ├── gemini.py
-│   └── groq.py
-│
-├── rag/
-│   ├── pipeline.py
-│   ├── prompt.py
-│   └── reflection.py
-│
-├── retrieval/
-│   ├── qdrant_store.py
-│   └── retriever.py
-│
-├── router/
-│   └── semantic_router.py
-│
-├── rules/
-│
-├── tests/
-│
-├── ingestion_output.json
-├── requiremnts.txt
-├── .env
-└── README.md
-```
-
----
-
-# 🧠 RAG Pipeline
-
-File chính:
-
-```text
-rag/pipeline.py
-```
-
-Luồng xử lý:
-
-```text
-User Question
-      │
-      ▼
-┌──────────────┐
-│  Reflection  │
-└──────┬───────┘
-       │
-       ▼
-┌─────────────────┐
-│ Semantic Router │
-└────────┬────────┘
-         │
-         ▼
-┌────────────────────┐
-│ BGE-M3 Embedding   │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ Qdrant Retrieval   │
-│      Top 20        │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ BGE Reranker       │
-│       Top 5        │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ Groq LLM           │
-└─────────┬──────────┘
-          │
-          ▼
- Answer + Citation
-```
-
----
-
-# 🔎 Retrieval
-
-Embedding model:
-
-```text
-BAAI/bge-m3
-```
-
-Reranker:
-
-```text
-BAAI/bge-reranker-v2-m3
-```
-
-Retrieval:
-
-```text
-Qdrant Top 20
-        ↓
-BGE Reranker
-        ↓
-Top 5
-```
-
-Chỉ các chunk hợp lệ mới được gửi vào LLM làm context.
-
----
-
-# 🤖 LLM
-
-Pipeline hiện tại sử dụng:
-
-```text
-Groq
-```
-
-Model mặc định trong code:
-
-```text
-openai/gpt-oss-20b
-```
-
-Có thể thay model thông qua `.env`:
-
-```env
-GROQ_MODEL=openai/gpt-oss-20b
-```
-
-Project vẫn có adapter Gemini trong:
-
-```text
-llm/gemini.py
-```
-
-nhưng `rag/pipeline.py` hiện tại mặc định sử dụng `GroqClient`.
-
----
-
-# 🗄️ Qdrant
-
-Mặc định:
-
-```env
-QDRANT_URL=http://localhost:6333
-```
-
-Collection:
-
-```text
-legal_chunks
-```
-
-Kiểm tra Qdrant:
-
-```text
-http://localhost:6333/dashboard
-```
-
----
-
-# ☁️ Dùng Qdrant Cloud
-
-Nếu không muốn chạy Qdrant bằng Docker, có thể sử dụng Qdrant Cloud.
-
-`.env`:
-
-```env
-GROQ_API_KEY=your_groq_key
-GROQ_MODEL=openai/gpt-oss-20b
-
-QDRANT_URL=https://xxxxxxxx.cloud.qdrant.io
-QDRANT_API_KEY=your_qdrant_api_key
-```
-
-Sau đó vẫn index:
-
-```bash
-python -m ingestion.indexer
-```
-
-và chạy:
-
-```bash
-python -m rag.pipeline
-```
-
----
-
-# ⚠️ Warning Hugging Face
-
-Lần đầu chạy có thể xuất hiện:
-
-```text
-Warning: You are sending unauthenticated requests to the HF Hub.
-```
-
-Đây không nhất thiết là lỗi.
-
-Project cần tải các model như:
-
-```text
-BAAI/bge-m3
-BAAI/bge-reranker-v2-m3
-```
-
-nên lần đầu chạy có thể mất thời gian tải model.
-
-Sau khi model đã được cache trên máy, các lần chạy sau thường không cần tải lại toàn bộ.
-
-Có thể cấu hình `HF_TOKEN` nếu muốn tăng giới hạn tải từ Hugging Face, nhưng không bắt buộc đối với các model public này.
-
----
-
-# ❗ Một số lỗi thường gặp
-
-## `Thiếu file .env`
-
-Ví dụ:
-
-```text
-Thiếu file .env ở thư mục project; thêm GROQ_API_KEY vào file này.
-```
-
-Kiểm tra:
-
-```text
-Chatbot/
-├── .env
-├── README.md
-└── ...
-```
-
-Không đặt `.env` bên trong:
-
-```text
-rag/
-llm/
-```
-
----
-
-## `File .env phải chứa GROQ_API_KEY hợp lệ`
-
-Kiểm tra `.env`:
-
-```env
-GROQ_API_KEY=gsk_xxxxxxxxx
-```
-
-Không dùng:
-
-```env
-GROQ_API_KEY=${GROQ_API_KEY}
-```
-
----
-
-## Qdrant không kết nối được
-
-Kiểm tra:
-
-```bash
-docker ps
-```
-
-Nếu container đã tồn tại nhưng đang dừng:
-
-```bash
-docker start legal-qdrant
-```
-
-Sau đó mở:
-
-```text
-http://localhost:6333
-```
-
----
-
-## Collection `legal_chunks` chưa tồn tại
-
-Chạy:
-
-```bash
-python -m ingestion.indexer
-```
-
-Sau đó thử lại:
-
-```bash
-python -m rag.pipeline
-```
-
----
-
-## `No module named ...`
-
-Đảm bảo đã kích hoạt venv:
-
-```bash
-venv\Scripts\activate
-```
-
-Sau đó:
-
-```bash
-pip install -r requiremnts.txt
-```
-
----
-
-## Warning Qdrant API key + insecure connection
-
-Nếu dùng Qdrant local:
-
-```env
-QDRANT_URL=http://localhost:6333
-```
-
-thì thông thường **không cần**:
-
-```env
-QDRANT_API_KEY=...
-```
-
-Xóa `QDRANT_API_KEY` khỏi `.env` nếu đang chạy local Qdrant không bật authentication.
-
----
-
-# 🧪 Chạy test
-
-```bash
-python tests/test_dan_su_tools.py
-python tests/test_lao_dong_tools.py
-python tests/test_ingestion.py
-python tests/test_retriever.py
-python tests/test_router.py
-python tests/test_rag.py
-```
-
-Các test mock không cần Groq hoặc Qdrant thật.
-
----
-
-# 🧰 Legal Tools
-
-Ngoài RAG chatbot, project còn có các legal tool sử dụng Rule Engine.
-
-Ví dụ:
-
-```python
-from legal_tools.dan_su.late_payment import run
-
-result = run(
-    principal="10000000",
-    overdue_days=30
-)
-
-print(result)
-```
-
-Các nhóm hiện có bao gồm:
-
-```text
-Dân sự
-├── late_payment
-└── deposit
-
-Lao động
-├── overtime
-├── leave
-├── insurance
-├── severance
-└── job_loss
-```
-
-Legal Tool được thiết kế cho những trường hợp có công thức hoặc rule xác định; RAG được sử dụng cho tra cứu và giải thích văn bản.
-
----
-
-# ✅ Quick Start — Windows
-
-Nếu đã có **Python + Git + Docker Desktop**, toàn bộ quy trình lần đầu:
-
-```bash
-git clone https://github.com/AChingNoLu/Chatbot.git
-
-cd Chatbot
-
-python -m venv venv
-
-venv\Scripts\activate
-
-python -m pip install --upgrade pip
-
-pip install -r requiremnts.txt
-```
-
-Tạo:
-
-```text
-.env
-```
-
-với:
-
-```env
-GROQ_API_KEY=your_groq_api_key_here
-GROQ_MODEL=openai/gpt-oss-20b
-QDRANT_URL=http://localhost:6333
-```
-
-Sau đó:
-
-```bash
-docker run -d --name legal-qdrant -p 6333:6333 -p 6334:6334 qdrant/qdrant
-
-python -m ingestion.indexer
-
-python -m rag.pipeline
-```
-
-Nhập:
-
-```text
-Câu hỏi: Điều kiện có hiệu lực của hợp đồng dân sự là gì?
-```
-
-Hoặc:
-
-```bash
-python -m rag.pipeline "Điều kiện có hiệu lực của hợp đồng dân sự là gì?"
-```
-
----
-
-# 📌 Lệnh cần nhớ
-
-Lần đầu:
-
-```bash
-pip install -r requiremnts.txt
-docker run -d --name legal-qdrant -p 6333:6333 -p 6334:6334 qdrant/qdrant
-python -m ingestion.indexer
-python -m rag.pipeline
-```
-
-Những lần sau:
-
-```bash
-docker start legal-qdrant
-venv\Scripts\activate
-python -m rag.pipeline
-```
-
----
-
-# 🔐 Bảo mật
-
-Không commit các file chứa API Key:
-
-```text
-.env
-```
-
-Đảm bảo `.gitignore` có:
-
-```gitignore
-.env
-venv/
-.venv/
-__pycache__/
-*.pyc
-```
-
-Nếu API key từng bị commit lên GitHub, hãy revoke key cũ và tạo key mới.
-
----
-
-# 📝 Ghi chú
-
-Nên chạy pipeline bằng:
-
-```bash
-python -m rag.pipeline
-```
-
-thay vì:
-
-```bash
-python rag/pipeline.py
-```
-
-vì project sử dụng import theo package từ thư mục gốc.
-
-Luôn chạy lệnh khi terminal đang đứng tại thư mục gốc:
-
-```text
-Chatbot/
-```
+## Nguyên tắc pháp lý
+
+- LLM không tự tạo hoặc sửa citation.
+- Quote phải tồn tại nguyên văn trong chunk được retrieval.
+- Phép tính và kết quả pháp lý xác định phải đi qua Rule Engine.
+- Thiếu dữ kiện hoặc căn cứ thì phải nói rõ, không suy đoán.
+- Không sửa trực tiếp file bên trong `qdrant_storage`.
