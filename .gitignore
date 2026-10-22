@@ -20,6 +20,6 @@ env/
 # Windows
 Thumbs.db
 
-# Generated retrieval data
-qdrant_storage/
+# Local Qdrant process lock and generated embeddings
+qdrant_storage/.lock
 embeddings_output/

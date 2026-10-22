@@ -192,8 +192,10 @@ rules/           Rule Engine xác định
 llm/             Groq adapter
 tests/           test local
 DATA/            văn bản nguồn
-qdrant_storage/  dữ liệu Qdrant local, không commit
+qdrant_storage/  dữ liệu Qdrant local (SQLite được lưu qua Git LFS)
 ```
+
+Cài Git LFS và chạy `git lfs pull` sau khi clone để tải bản Qdrant đã index. Không commit file `qdrant_storage/.lock` vì mỗi máy tự tạo khóa này khi mở Qdrant.
 
 ## Nguyên tắc pháp lý
 
