@@ -53,6 +53,22 @@ git rm --cached .env
 
 ## Chạy chatbot
 
+Để hỏi về cả sáu lĩnh vực, chạy RAG server ở terminal thứ nhất (`python -m rag.pipeline --serve`), rồi chạy agent ở terminal thứ hai:
+
+```powershell
+python -m rag.legal_agent
+```
+
+Nhập câu hỏi pháp luật thông thường để tra cứu văn bản và nhận câu trả lời có căn cứ khi dữ liệu đủ. Nhập `/nghi-phep` để chuyển sang công cụ tính ngày nghỉ; sau khi tính xong có thể tiếp tục hỏi. Các yêu cầu tính toán khác hiện được báo là chưa có công cụ tích hợp. Nhập `exit` để thoát.
+
+Thử luồng LangGraph tính ngày nghỉ hằng năm (hỏi thêm dữ kiện nếu thiếu, rồi gọi Rule Engine):
+
+```powershell
+python -m rag.leave_agent
+```
+
+Agent sẽ hỏi số năm làm cho cùng người sử dụng lao động, số tháng đã làm trong năm cần tính, rồi cho chọn nhóm: `1` công việc bình thường, `2` nặng nhọc/độc hại/nguy hiểm hoặc người lao động chưa thành niên/khuyết tật, `3` đặc biệt nặng nhọc/độc hại/nguy hiểm. Luồng này dùng Groq để đọc dữ kiện từ câu hỏi, nhưng kết quả số ngày do `legal_tools.lao_dong.leave` tính. Bản thử chưa truy xuất/kiểm tra hiệu lực văn bản để tạo citation, và trạng thái hội thoại chỉ được giữ trong RAM khi lệnh đang chạy.
+
 ### 1. Khởi động RAG server
 
 Mở terminal thứ nhất:

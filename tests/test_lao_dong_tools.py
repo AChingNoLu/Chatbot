@@ -26,7 +26,8 @@ class LabourToolTests(unittest.TestCase):
 
     def test_annual_leave_is_prorated_and_includes_seniority(self):
         output = leave(worked_months=6, category="normal", years_with_employer=10)
-        self.assertEqual(output["result"]["days"], "8")
+        self.assertEqual(output["result"]["days"], "7")
+        self.assertTrue(any(item["article"] == "Điều 66" for item in output["legal_bases"]))
 
     def test_insurance_rate_is_not_inferred(self):
         with self.assertRaises(TypeError):

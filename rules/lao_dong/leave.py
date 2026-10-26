@@ -20,6 +20,8 @@ def calculate(worked_months: Any, category: str, years_with_employer: Any = 0) -
     years = decimal(years_with_employer, "years_with_employer")
     if months > Decimal("12"):
         raise ValueError("worked_months must not exceed 12 for one annual-leave calculation.")
-    days = Decimal(BASE_DAYS[category]) * months / Decimal("12") + (years // Decimal("5"))
+    days = (Decimal(BASE_DAYS[category]) + years // Decimal("5")) * months / Decimal("12")
     return result(RULE_ID, RULE_VERSION, {"days": str(days), "category": category},
-                  [basis("Điều 113", "Khoản 1"), basis("Điều 113", "Khoản 2"), basis("Điều 114")])
+                  [basis("Điều 113", "Khoản 1"), basis("Điều 113", "Khoản 2"), basis("Điều 114"),
+                   basis("Điều 66", "Khoản 1", document="Nghị định 145/2020/NĐ-CP",
+                         source="DATA/Lao_Dong/nghi_dinh/145_2020_ND-CP_459400.docx")])

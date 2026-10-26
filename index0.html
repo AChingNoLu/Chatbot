@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Văn bản & Trợ lý Pháp luật Lao động</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--p:#0f172a;--b:#2563eb;--b-lt:#eff6ff;--gold:#d97706;--bg:#f8fafc;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--sh:0 10px 25px -5px rgba(15,23,42,.08),0 4px 10px -4px rgba(15,23,42,.04);--sh-lg:0 20px 35px -10px rgba(15,23,42,.15)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+header{background:linear-gradient(135deg,#091426 0%,#1e3a8a 60%,#1d4ed8 100%);color:#fff;padding:3.5rem 1.5rem 4.5rem;text-align:center;position:relative}
+.badge-pill{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .9rem;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);border-radius:999px;font-size:.78rem;font-weight:600;margin-bottom:1rem;color:#fed7aa}
+header h1{font-size:2.2rem;font-weight:700;margin-bottom:.6rem;letter-spacing:-.5px}
+header p{font-size:1.02rem;color:#cbd5e1;max-width:680px;margin:0 auto}
+.container{max-width:1040px;margin:0 auto;padding:0 1.25rem}
+.intro{background:var(--card);border-radius:16px;padding:1.8rem 2rem;margin-top:-2.4rem;box-shadow:var(--sh);border:1px solid var(--border);position:relative;z-index:10}
+.intro h2{color:var(--p);font-size:1.25rem;font-weight:700;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.intro p{color:#475569;font-size:.95rem}
+section{margin:2.5rem 0}
+.sec-title{color:var(--p);font-size:1.35rem;font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;gap:.6rem}
+.highlights{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
+.hl-card{background:var(--card);border-radius:14px;padding:1.4rem;box-shadow:var(--sh);border:1px solid var(--border);transition:all .25s ease;display:flex;flex-direction:column;gap:.4rem}
+.hl-card:hover{transform:translateY(-3px);box-shadow:var(--sh-lg);border-color:#cbd5e1}
+.hl-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;background:#f1f5f9;margin-bottom:.4rem}
+.hl-card h3{font-size:.98rem;color:var(--p);font-weight:600}
+.hl-card p{font-size:.86rem;color:var(--muted);line-height:1.5}
+.search-panel{background:var(--card);border-radius:16px;padding:1.25rem;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:1.5rem}
+.search-box{position:relative;display:flex;align-items:center}
+.search-box span{position:absolute;left:1rem;color:var(--muted);font-size:1.1rem;pointer-events:none}
+.search-box input{width:100%;padding:.75rem 1rem .75rem 2.8rem;border:1.5px solid var(--border);border-radius:10px;font:inherit;font-size:.92rem;outline:none;background:#f8fafc;transition:.2s}
+.search-box input:focus{background:#fff;border-color:var(--b);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.filters{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.85rem;align-items:center}
+.f-btn{padding:.35rem .85rem;border-radius:8px;border:1px solid var(--border);background:#f8fafc;color:var(--muted);font:inherit;font-size:.82rem;font-weight:500;cursor:pointer;transition:.2s}
+.f-btn:hover,.f-btn.active{background:var(--b);border-color:var(--b);color:#fff}
+.count-tag{margin-left:auto;font-size:.82rem;color:var(--muted);font-weight:500}
+.doc-list{display:grid;gap:.9rem}
+.doc-card{background:var(--card);border-radius:14px;padding:1.4rem 1.6rem;box-shadow:var(--sh);border:1px solid var(--border);border-left:4px solid var(--b);transition:all .25s ease;display:flex;flex-direction:column;gap:.45rem}
+.doc-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);border-color:#cbd5e1;border-left-color:var(--gold)}
+.doc-header{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+.tag{display:inline-block;padding:.2rem .65rem;border-radius:6px;font-size:.72rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+.tag-luat{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.tag-nd{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
+.tag-tt{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+.status-pill{font-size:.75rem;color:#059669;display:inline-flex;align-items:center;gap:.3rem;font-weight:500}
+.doc-card h3{color:var(--p);font-size:1.06rem;font-weight:700;line-height:1.4}
+.meta{font-size:.82rem;color:var(--muted);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.doc-card p{font-size:.92rem;color:#475569;line-height:1.6}
+.doc-actions{margin-top:.4rem;padding-top:.6rem;border-top:1px dashed var(--border);display:flex;justify-content:flex-end}
+.ask-btn{padding:.35rem .8rem;font-size:.8rem;font-weight:600;border-radius:6px;border:1px solid #bfdbfe;background:#eff6ff;color:var(--b);cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:.35rem}
+.ask-btn:hover{background:var(--b);color:#fff;border-color:var(--b)}
+footer{background:var(--p);color:#94a3b8;text-align:center;padding:2.5rem 1.5rem;margin-top:4rem;font-size:.88rem;border-top:1px solid #334155}
+footer a{color:#38bdf8;text-decoration:none;font-weight:500}footer a:hover{text-decoration:underline}
+.hidden{display:none!important}
+.chat-fab{position:fixed;right:26px;bottom:26px;height:54px;padding:0 1.2rem 0 1rem;border-radius:999px;border:none;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;font:inherit;font-weight:600;font-size:.9rem;display:flex;align-items:center;gap:.6rem;cursor:pointer;box-shadow:0 8px 25px rgba(37,99,235,.35);z-index:999;transition:all .25s ease}
+.chat-fab:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 12px 30px rgba(37,99,235,.45)}
+.chat-window{position:fixed;right:26px;bottom:92px;width:395px;max-width:calc(100vw - 32px);height:560px;background:#fff;border-radius:20px;box-shadow:0 15px 40px rgba(15,23,42,.22);overflow:hidden;display:none;flex-direction:column;z-index:1000;border:1px solid rgba(226,232,240,.9);animation:slideUp .25s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+.chat-header{background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%);color:#fff;padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between}
+.chat-title-wrap{display:flex;align-items:center;gap:.7rem}
+.chat-avatar{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.chat-info h3{font-size:.92rem;font-weight:700;line-height:1.2}
+.chat-info span{font-size:.73rem;color:#86efac;display:flex;align-items:center;gap:.3rem}
+.chat-btn-icon{background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:.2s}
+.chat-btn-icon:hover{background:rgba(255,255,255,.25)}
+.chat-chips{padding:.5rem .8rem;background:#f8fafc;border-bottom:1px solid var(--border);display:flex;gap:.4rem;overflow-x:auto}
+.chat-chips::-webkit-scrollbar{display:none}
+.chip{padding:.26rem .65rem;border-radius:999px;background:#fff;border:1px solid #cbd5e1;font-size:.74rem;color:#334155;cursor:pointer;transition:.15s;font-weight:500;white-space:nowrap}
+.chip:hover{background:var(--b-lt);border-color:var(--b);color:var(--b)}
+.chat-body{flex:1;padding:1rem;overflow-y:auto;background:#f8fafc;display:flex;flex-direction:column;gap:.75rem}
+.c-msg{max-width:85%;padding:.7rem .95rem;border-radius:14px;font-size:.87rem;line-height:1.55;word-break:break-word}
+.c-bot{background:#fff;border:1px solid var(--border);color:#1e293b;border-top-left-radius:3px;box-shadow:0 2px 5px rgba(0,0,0,.03);align-self:flex-start}
+.c-user{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-top-right-radius:3px;box-shadow:0 3px 10px rgba(37,99,235,.2);align-self:flex-end}
+.c-input{display:flex;padding:.75rem;background:#fff;border-top:1px solid var(--border);gap:.5rem;align-items:center}
+.c-input input{flex:1;border:1.5px solid var(--border);border-radius:999px;padding:.6rem 1rem;font:inherit;font-size:.88rem;outline:none;background:#f8fafc;transition:.2s}
+.c-input input:focus{background:#fff;border-color:var(--b);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.c-send{width:36px;height:36px;border-radius:50%;border:none;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0}
+.c-send:hover{transform:scale(1.06)}
+@media(max-width:640px){header{padding:2.5rem 1rem 3.5rem}header h1{font-size:1.6rem}.chat-window{bottom:0;right:0;width:100vw;height:100vh;max-width:100vw;border-radius:0}.chat-fab{right:16px;bottom:16px}}
+</style>
+<base target="_blank">
+</head>
+<body>
+<header>
+  <div class="badge-pill">⚖️ CỔNG TRA CỨU PHÁP LUẬT LAO ĐỘNG VIỆT NAM</div>
+  <h1>Văn bản & Trợ lý Pháp luật Lao động</h1>
+  <p>Tra cứu hệ thống văn bản quy phạm pháp luật về lao động, tiền lương, BHXH và quyền lợi hợp pháp của người lao động.</p>
+</header>
+<div class="container">
+  <div class="intro">
+    <h2>🏛️ Giới thiệu hệ thống</h2>
+    <p>Hệ thống pháp luật lao động Việt Nam được xây dựng trên cơ sở <strong>Bộ luật Lao động 2019</strong> và các văn bản hướng dẫn thi hành. Các quy định điều chỉnh quan hệ lao động, hợp đồng, tiền lương, thời giờ làm việc, nghỉ ngơi, an toàn lao động và giải quyết tranh chấp.</p>
+  </div>
+  <section>
+    <h2 class="sec-title">📌 Điểm nổi bật cần lưu ý</h2>
+    <div class="highlights">
+      <div class="hl-card"><div class="hl-icon">⏰</div><h3>Thời giờ làm việc</h3><p>Tối đa 8 giờ/ngày, 48 giờ/tuần. Làm thêm không quá 40 giờ/tháng và 300 giờ/năm theo luật định.</p></div>
+      <div class="hl-card"><div class="hl-icon">💰</div><h3>Tiền lương tối thiểu</h3><p>Áp dụng mức lương tối thiểu theo 4 vùng theo quy định mới nhất của Chính phủ cho NLĐ.</p></div>
+      <div class="hl-card"><div class="hl-icon">🏖️</div><h3>Nghỉ phép thường niên</h3><p>Tối thiểu 12 ngày làm việc/năm, cứ mỗi 5 năm làm việc được cộng thêm 1 ngày phép thâm niên.</p></div>
+      <div class="hl-card"><div class="hl-icon">🛡️</div><h3>Chế độ Bảo hiểm</h3><p>Bắt buộc tham gia đầy đủ BHXH, BHYT, BHTN với trách nhiệm đóng của cả người lao động và NSDLĐ.</p></div>
+    </div>
+  </section>
+  <section>
+    <h2 class="sec-title">📚 Danh mục văn bản quy phạm</h2>
+    <div class="search-panel">
+      <div class="search-box"><span>🔍</span><input type="text" id="searchInput" placeholder="Tìm kiếm văn bản theo tên, số hiệu hoặc từ khóa nội dung..."></div>
+      <div class="filters">
+        <button class="f-btn active" data-filter="all">Tất cả</button>
+        <button class="f-btn" data-filter="luat">Luật</button>
+        <button class="f-btn" data-filter="nghi-dinh">Nghị định</button>
+        <button class="f-btn" data-filter="thong-tu">Thông tư</button>
+        <span class="count-tag" id="countTag">Hiển thị: 8 văn bản</span>
+      </div>
+    </div>
+    <div class="doc-list" id="docList">
+      <div class="doc-card" data-type="luat" data-keywords="bộ luật lao động 2019 hợp đồng tiền lương 45/2019/qh14">
+        <div class="doc-header"><span class="tag tag-luat">Luật</span><span class="status-pill">● Đang có hiệu lực</span></div>
+        <h3>Bộ luật Lao động số 45/2019/QH14</h3>
+        <div class="meta"><span>📅 Ban hành: 20/11/2019</span><span>⚡ Hiệu lực: 01/01/2021</span></div>
+        <p>Văn bản pháp luật nền tảng và toàn diện nhất, quy định tiêu chuẩn lao động, quyền và nghĩa vụ của người lao động, người sử dụng lao động, đối thoại và hợp đồng lao động.</p>
+        <div class="doc-actions"><button class="ask-btn" onclick="askAiAbout('Bộ luật Lao động 2019')">💬 Hỏi AI về văn bản này</button></div>
+      </div>
+      <div class="doc-card" data-type="luat" data-keywords="bảo hiểm xã hội bhxh bhyt bhtn 58/2014/qh13 41/2024/qh15">
+        <div class="doc-header"><span class="tag tag-luat">Luật</span><span class="status-pill">● Đang có hiệu lực</span></div>
+        <h3>Luật Bảo hiểm xã hội số 58/2014/QH13</h3>
+        <div class="meta"><span>📅 Ban hành: 20/11/2014</span><span>🔄 Sửa đổi: Luật 41/2024/QH15</span></div>
+        <p>Quy định chế độ, chính sách bảo hiểm xã hội bắt buộc và tự nguyện, quyền và trách nhiệm của người lao động, người sử dụng lao động và cơ quan bảo hiểm.</p>
+        <div class="doc-actions"><button class="ask-btn" onclick="askAiAbout('Luật Bảo hiểm xã hội')">💬 Hỏi AI về văn bản này</button></div>
+      </div>
+      <div class="doc-card" data-type="nghi-dinh" data-keywords="nghị định 145 hướng dẫn bộ luật lao động 145/2020/nđ-cp">
+        <div class="doc-header"><span class="tag tag-nd">Nghị định</span><span class="status-pill">● Đang có hiệu lực</span></div>
+        <h3>Nghị định 145/2020/NĐ-CP</h3>
+        <div class="meta"><span>📅 Ban hành: 14/12/2020</span><span>⚡ Hiệu lực: 01/02/2021</span></div>
+        <p>Quy định chi tiết và hướng dẫn thi hành một số điều của Bộ luật Lao động về điều kiện lao động và quan hệ lao động, kỷ luật lao động, trách nhiệm vật chất.</p>
+        <div class="doc-actions"><button class="ask-btn" onclick="askAiAbout('Nghị định 145/2020/NĐ-CP')">💬 Hỏi AI về văn bản này</button></div>
+      </div>
+      <div class="doc-card" data-type="nghi-dinh" data-keywords="nghị định 152 lao động nước ngoài việt nam 152/2020/nđ-cp">
+        <div class="doc-header"><span class="tag tag-nd">Nghị định</span><span class="status-pill">● Đang có hiệu lực</span></div>
+        <h3>Nghị định 152/2020/NĐ-CP</h3>
+        <div class="meta"><span>📅 Ban hành: 30/12/2020</span><span>⚡ Hiệu lực: 01/02/2021</span></div>
+        <p>Hướng dẫn về người lao động nước ngoài làm việc tại Việt Nam và tuyển dụng, quản lý người lao động Việt Nam làm việc cho tổ chức, cá nhân nước ngoài.</p>
+        <div class="doc-actions"><button class="ask-btn" onclick="askAiAbout('Nghị định 152/2020/NĐ-CP')">💬 Hỏi AI về văn bản này</button></div>
+      </div>
+      <div class="doc-card" data-type="nghi-dinh" data-keywords="nghị định 38 lương tối thiểu vùng 38/2022/nđ-cp 135/2020">
+        <div class="doc-header"><span class="tag tag-nd">Nghị định</span><span class="status-pill">● Đang có hiệu lực</span></div>
+        <h3>Nghị định 38/2022/NĐ-CP (Lương tối thiểu)</h3>
+        <div class="meta"><span>📅 Ban hành: 17/06/2022</span><span>⚡ Hiệu lực: 01/07/2022</span></div>
+        <p>Quy định mức lương tối thiểu tháng và mức lương tối thiểu giờ đối với người lao động làm việc theo hợp đồng lao động theo 4 vùng kinh tế.</p>
+        <div class="doc-actions"><button class="ask-btn" onclick="askAiAbout('Mức lương tối thiểu theo Nghị định 38/2022')">💬 Hỏi AI về văn bản này</button></div>
+      </div>
+      <div class="doc-card" data-type="thong-tu" data-keywords="thông tư 10 hướng dẫn lao động 10/2020/tt-bldtbxh">
+        <div class="doc-header"><span class="tag tag-tt">Thông tư</span><span class="status-pill">● Đang có hiệu lực</span></div>
+        <h3>Thông tư 10/2020/TT-BLĐTBXH</h3>
+        <div class="meta"><span>📅 Ban hành: 12/11/2020</span><span>⚡ Hiệu lực: 01/02/2021</span></div>
+        <p>Hướng dẫn nội dung chủ yếu của hợp đồng lao động, hội đồng thương lượng tập thể và nghề, công việc có ảnh hưởng xấu tới chức năng sinh sản, nuôi con nhỏ.</p>
+        <div class="doc-actions"><button class="ask-btn" onclick="askAiAbout('Thông tư 10/2020/TT-BLĐTBXH')">💬 Hỏi AI về văn bản này</button></div>
+      </div>
+      <div class="doc-card" data-type="luat" data-keywords="luật công đoàn 12/2012/qh13 quyền lợi lao động">
+        <div class="doc-header"><span class="tag tag-luat">Luật</span><span class="status-pill">● Đang có hiệu lực</span></div>
+        <h3>Luật Công đoàn số 12/2012/QH13</h3>
+        <div class="meta"><span>📅 Ban hành: 20/06/2012</span><span>⚡ Hiệu lực: 01/01/2013</span></div>
+        <p>Quy định về tổ chức, chức năng đại diện, chăm lo và bảo vệ quyền, lợi ích hợp pháp, chính đáng của đoàn viên và người lao động.</p>
+        <div class="doc-actions"><button class="ask-btn" onclick="askAiAbout('Luật Công đoàn')">💬 Hỏi AI về văn bản này</button></div>
+      </div>
+      <div class="doc-card" data-type="luat" data-keywords="luật an toàn vệ sinh lao động 84/2015/qh13 bhlđ">
+        <div class="doc-header"><span class="tag tag-luat">Luật</span><span class="status-pill">● Đang có hiệu lực</span></div>
+        <h3>Luật An toàn, vệ sinh lao động số 84/2015/QH13</h3>
+        <div class="meta"><span>📅 Ban hành: 25/06/2015</span><span>⚡ Hiệu lực: 01/07/2016</span></div>
+        <p>Quy định về bảo đảm an toàn, vệ sinh lao động; chính sách, chế độ đối với người bị tai nạn lao động, bệnh nghề nghiệp; quyền và nghĩa vụ các bên.</p>
+        <div class="doc-actions"><button class="ask-btn" onclick="askAiAbout('Luật An toàn vệ sinh lao động')">💬 Hỏi AI về văn bản này</button></div>
+      </div>
+    </div>
+    <p id="noResult" class="hidden" style="text-align:center;color:var(--muted);padding:3rem 1rem;font-size:.95rem">🔍 Không tìm thấy văn bản pháp luật phù hợp với tìm kiếm của bạn.</p>
+  </section>
+</div>
+<div class="chat-window" id="chatbotBox">
+  <div class="chat-header">
+    <div class="chat-title-wrap">
+      <div class="chat-avatar">⚖️</div>
+      <div class="chat-info"><h3>Trợ lý Pháp luật AI</h3><span>● Đang trực tuyến · RAG</span></div>
+    </div>
+    <div class="chat-ctrls">
+      <button class="chat-btn-icon" id="chatClear" title="Xóa hội thoại">🗑️</button>
+      <button class="chat-btn-icon" id="chatClose" title="Thu nhỏ">✕</button>
+    </div>
+  </div>
+  <div class="chat-chips">
+    <span class="chip" onclick="quickAsk('Thời giờ làm việc và làm thêm tối đa là bao nhiêu?')">⏰ Giờ làm thêm tối đa?</span>
+    <span class="chip" onclick="quickAsk('Cách tính trợ cấp thôi việc theo Bộ luật Lao động?')">💰 Trợ cấp thôi việc</span>
+    <span class="chip" onclick="quickAsk('Quy định về thời gian thử việc và tiền lương thử việc?')">📋 Tiền lương thử việc</span>
+    <span class="chip" onclick="quickAsk('Mức đóng bảo hiểm xã hội bắt buộc hiện nay?')">🛡️ Mức đóng BHXH</span>
+  </div>
+  <div class="chat-body" id="chatbotMessages">
+    <div class="c-msg c-bot">Xin chào! 👋 Tôi là Trợ lý AI Pháp luật Lao động. Tôi có thể hỗ trợ tra cứu các điều khoản, cách tính chế độ hoặc quy định pháp lý cho bạn.</div>
+  </div>
+  <div class="c-input">
+    <input type="text" id="chatbotInput" placeholder="Nhập câu hỏi pháp lý của bạn...">
+    <button class="c-send" id="chatbotSend" title="Gửi câu hỏi">➤</button>
+  </div>
+</div>
+<button class="chat-fab" id="chatbotButton"><span class="fab-icon">🤖</span><span>Hỏi Trợ lý AI</span></button>
+<footer>
+  <p>Cơ sở dữ liệu văn bản pháp luật Lao động Việt Nam &nbsp;|&nbsp; Hệ thống RAG hỗ trợ tra cứu thông minh</p>
+  <p style="margin-top:.4rem;font-size:.8rem;opacity:.75">Tham khảo nguồn chính thức: <a href="https://vbpl.vn">vbpl.vn</a> — Cơ sở dữ liệu Quốc gia về Văn bản Pháp luật</p>
+</footer>
+<script>
+const searchInput=document.getElementById('searchInput'),docCards=document.querySelectorAll('.doc-card'),noResult=document.getElementById('noResult'),countTag=document.getElementById('countTag'),filterBtns=document.querySelectorAll('.f-btn');
+let currentFilter='all';
+function filterDocs(){
+  const q=searchInput.value.toLowerCase().trim();let visible=0;
+  docCards.forEach(card=>{
+    const type=card.dataset.type,text=(card.textContent+' '+card.dataset.keywords).toLowerCase();
+    const matchType=(currentFilter==='all'||type===currentFilter),matchText=(!q||text.includes(q));
+    const show=matchType&&matchText;card.classList.toggle('hidden',!show);if(show)visible++;
+  });
+  countTag.textContent=`Hiển thị: ${visible}/${docCards.length} văn bản`;
+  noResult.classList.toggle('hidden',visible>0);
+}
+searchInput.addEventListener('input',filterDocs);
+filterBtns.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    filterBtns.forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+    currentFilter=btn.dataset.filter;filterDocs();
+  });
+});
+const chatBtn=document.getElementById('chatbotButton'),chatBox=document.getElementById('chatbotBox'),chatClose=document.getElementById('chatClose'),chatClear=document.getElementById('chatClear'),chatMsgs=document.getElementById('chatbotMessages'),chatInput=document.getElementById('chatbotInput'),chatSend=document.getElementById('chatbotSend');
+chatBtn.onclick=()=>{chatBox.style.display='flex';chatBtn.style.display='none';chatInput.focus();};
+chatClose.onclick=()=>{chatBox.style.display='none';chatBtn.style.display='flex';};
+chatClear.onclick=()=>{chatMsgs.innerHTML='<div class="c-msg c-bot">Hội thoại đã được làm mới. Hãy nhập câu hỏi pháp lý bạn quan tâm! 👋</div>';};
+function addMsg(text,isUser){
+  const el=document.createElement('div');el.className=isUser?'c-msg c-user':'c-msg c-bot';el.innerHTML=text;
+  chatMsgs.appendChild(el);chatMsgs.scrollTop=chatMsgs.scrollHeight;return el;
+}
+function formatAns(txt){return txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');}
+async function sendMessage(){
+  const text=chatInput.value.trim();if(!text)return;
+  addMsg(text,true);chatInput.value='';
+  const loading=addMsg('⏳ <em>Đang tra cứu cơ sở dữ liệu pháp luật...</em>',false);
+  try{
+    let res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,question:text})}).catch(()=>null);
+    if(!res||!res.ok){res=await fetch('/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:text})});}
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    let reply=formatAns(data.answer||data.response||'Không có phản hồi từ máy chủ.');
+    if(data.citations&&data.citations.length){
+      const cites=data.citations.map(c=>typeof c==='string'?c:(c.document||c.source||'')+(c.article?' - '+c.article:'')).filter(Boolean).join('; ');
+      if(cites) reply+=`<div style="margin-top:.5rem;padding-top:.4rem;border-top:1px dashed #cbd5e1;font-size:.78rem;color:#475569"><strong>Căn cứ:</strong> ${cites}</div>`;
+    }
+    loading.innerHTML=reply;
+  }catch(e){
+    loading.innerHTML='⚠️ <em>Không thể kết nối máy chủ RAG. Vui lòng kiểm tra lại dịch vụ backend.</em>';
+  }
+  chatMsgs.scrollTop=chatMsgs.scrollHeight;
+}
+function quickAsk(q){chatBox.style.display='flex';chatBtn.style.display='none';chatInput.value=q;sendMessage();}
+function askAiAbout(doc){quickAsk(`Hãy tóm tắt các điểm quan trọng nhất của văn bản: ${doc}`);}
+chatSend.onclick=sendMessage;
+chatInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage();});
+</script>
+</body>
+</html>
