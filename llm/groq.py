@@ -135,6 +135,68 @@ class GroqClient:
         except (ValueError, TypeError, IndexError, AttributeError):
             return None
 
+    def chat_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        *,
+        tool_choice: str = "auto",
+    ) -> dict[str, Any]:
+        """Return the assistant message, including structured tool calls if any.
+
+        Callers must execute requested tools themselves and append tool results
+        to the message history before requesting the next assistant step.
+        """
+        if not messages or not all(isinstance(item, dict) for item in messages):
+            raise ValueError("messages must be a non-empty list of message objects")
+        if not isinstance(tools, list) or not tools:
+            raise ValueError("tools must be a non-empty list of tool definitions")
+
+        from groq import DefaultHttpxClient, Groq
+
+        try:
+            if self._client is None:
+                self._client = Groq(
+                    api_key=self._api_key,
+                    http_client=DefaultHttpxClient(trust_env=False),
+                )
+            response = self._client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                tool_choice=tool_choice,
+                temperature=0,
+            )
+            message = response.choices[0].message
+            calls = []
+            for call in message.tool_calls or []:
+                try:
+                    arguments = json.loads(call.function.arguments)
+                except (ValueError, TypeError) as exc:
+                    raise ValueError(
+                        f"Invalid tool arguments for {call.function.name}"
+                    ) from exc
+                if not isinstance(arguments, dict):
+                    raise ValueError(
+                        f"Tool arguments for {call.function.name} must be an object"
+                    )
+                calls.append({
+                    "id": call.id,
+                    "type": "function",
+                    "function": {
+                        "name": call.function.name,
+                        "arguments": arguments,
+                    },
+                })
+            return {"role": "assistant", "content": message.content, "tool_calls": calls}
+        except ValueError:
+            raise
+        except Exception as exc:
+            safe_error = str(exc).replace(self._api_key, "[REDACTED]")
+            raise RuntimeError(
+                f"Groq tool calling failed ({type(exc).__name__}): {safe_error}"
+            ) from None
+
     def close(self) -> None:
         # Groq client không bắt buộc phải close như Gemini client.
         if self._client is not None:
