@@ -68,13 +68,13 @@ def build_graph(answer: Callable[[str], dict[str, Any]], llm: Any,
             raise ValueError("Vui lòng nhập câu hỏi pháp luật.")
         if message.casefold() in {"/huy", "/cancel", "hủy"}:
             return record(state, "Đã hủy yêu cầu đang thu thập.", "cancelled",
-                          tool="", pending="", facts={}, observations=[], steps=0, original_query=""
+                          tool="", pending="", facts={}, observations=[], steps=0, original_query="")
         if state.get("steps", 0) >= MAX_STEPS:
             return record(state, "Đã đạt giới hạn tra cứu.", "step_limit")
         if state.get("tool") and state.get("pending"):
             if "?" in message or message.casefold().startswith(("tôi muốn hỏi", "cho tôi hỏi", "thế còn", "còn nếu")):
                 return record(state, "Đã chuyển sang câu hỏi mới. Vui lòng gửi lại câu hỏi để bắt đầu.", "cancelled",
-                              tool="", pending="", facts={}, observations=[], steps=0, original_query=""
+                              tool="", pending="", facts={}, observations=[], steps=0, original_query="")
             return {"proposed": {"name": state["tool"]}, "status": "execute"}
         if message.casefold() in GREETINGS:
             return record(state, "Xin chào! Bạn cần tra cứu vấn đề pháp luật nào?", "chitchat")
