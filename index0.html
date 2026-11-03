@@ -206,6 +206,7 @@ footer a{color:#38bdf8;text-decoration:none;font-weight:500}footer a:hover{text-
 <script>
 const searchInput=document.getElementById('searchInput'),docCards=document.querySelectorAll('.doc-card'),noResult=document.getElementById('noResult'),countTag=document.getElementById('countTag'),filterBtns=document.querySelectorAll('.f-btn');
 let currentFilter='all';
+let chatThreadId=null;
 function filterDocs(){
   const q=searchInput.value.toLowerCase().trim();let visible=0;
   docCards.forEach(card=>{
@@ -226,24 +227,29 @@ filterBtns.forEach(btn=>{
 const chatBtn=document.getElementById('chatbotButton'),chatBox=document.getElementById('chatbotBox'),chatClose=document.getElementById('chatClose'),chatClear=document.getElementById('chatClear'),chatMsgs=document.getElementById('chatbotMessages'),chatInput=document.getElementById('chatbotInput'),chatSend=document.getElementById('chatbotSend');
 chatBtn.onclick=()=>{chatBox.style.display='flex';chatBtn.style.display='none';chatInput.focus();};
 chatClose.onclick=()=>{chatBox.style.display='none';chatBtn.style.display='flex';};
-chatClear.onclick=()=>{chatMsgs.innerHTML='<div class="c-msg c-bot">Hội thoại đã được làm mới. Hãy nhập câu hỏi pháp lý bạn quan tâm! 👋</div>';};
+chatClear.onclick=()=>{chatThreadId=null;chatMsgs.innerHTML='<div class="c-msg c-bot">Hội thoại đã được làm mới. Hãy nhập câu hỏi pháp lý bạn quan tâm! 👋</div>';};
 function addMsg(text,isUser){
-  const el=document.createElement('div');el.className=isUser?'c-msg c-user':'c-msg c-bot';el.innerHTML=text;
+  const el=document.createElement('div');el.className=isUser?'c-msg c-user':'c-msg c-bot';el.textContent=text;
   chatMsgs.appendChild(el);chatMsgs.scrollTop=chatMsgs.scrollHeight;return el;
 }
-function formatAns(txt){return txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');}
+function formatAns(txt){
+  const safe=String(txt).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return safe.replace(/\\*\\*(.*?)\\*\\*/g,'<strong>$1</strong>').replace(/\\n/g,'<br>');
+}
 async function sendMessage(){
   const text=chatInput.value.trim();if(!text)return;
   addMsg(text,true);chatInput.value='';
   const loading=addMsg('⏳ <em>Đang tra cứu cơ sở dữ liệu pháp luật...</em>',false);
   try{
-    let res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,question:text})}).catch(()=>null);
+    let res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,thread_id:chatThreadId})}).catch(()=>null);
     if(!res||!res.ok){res=await fetch('/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:text})});}
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
-    let reply=formatAns(data.answer||data.response||'Không có phản hồi từ máy chủ.');
+    if(data.thread_id)chatThreadId=data.thread_id;
+    let reply=formatAns(data.reply||data.answer||data.response||'Không có phản hồi từ máy chủ.');
+    if(data.status==='needs_facts')reply+='<div style="font-size:.75rem;color:#64748b">Đang chờ bổ sung dữ kiện · gõ /huy để hủy</div>';
     if(data.citations&&data.citations.length){
-      const cites=data.citations.map(c=>typeof c==='string'?c:(c.document||c.source||'')+(c.article?' - '+c.article:'')).filter(Boolean).join('; ');
+      const cites=data.citations.map(c=>typeof c==='string'?c:(c.doc_name||c.document||c.source||'')+(c.article?' - '+c.article:'')).filter(Boolean).map(formatAns).join('; ');
       if(cites) reply+=`<div style="margin-top:.5rem;padding-top:.4rem;border-top:1px dashed #cbd5e1;font-size:.78rem;color:#475569"><strong>Căn cứ:</strong> ${cites}</div>`;
     }
     loading.innerHTML=reply;

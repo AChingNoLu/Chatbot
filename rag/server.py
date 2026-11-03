@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from uuid import UUID, uuid4
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
 
@@ -27,10 +28,16 @@ def _build_pipeline() -> tuple[RagPipeline, Any, Any]:
     return RagPipeline(SemanticRouter(embedder), retriever, llm), llm, store
 
 
-def _handler(pipeline: RagPipeline) -> type[BaseHTTPRequestHandler]:
+def _build_agent(pipeline: RagPipeline, llm: Any) -> Any:
+    from rag.legal_agent import build_graph
+    # Direct in-process call avoids deadlock from /chat -> HTTP /answer.
+    return build_graph(lambda question: pipeline.answer(question, allow_legal_tool=True), llm)
+
+
+def _handler(pipeline: RagPipeline, agent: Any = None) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:
-            if self.path != "/answer":
+            if self.path not in ("/answer", "/chat"):
                 self.send_error(404)
                 return
             try:
@@ -38,6 +45,34 @@ def _handler(pipeline: RagPipeline) -> type[BaseHTTPRequestHandler]:
                 if length <= 0 or length > 1_000_000:
                     raise ValueError("Invalid request size.")
                 payload = json.loads(self.rfile.read(length))
+                if not isinstance(payload, dict):
+                    raise ValueError("Request must be a JSON object.")
+                if self.path == "/chat":
+                    if agent is None:
+                        self._json(503, {"error": "Chat agent is not configured."})
+                        return
+                    message = payload.get("message")
+                    if not isinstance(message, str) or not message.strip() or len(message) > 10000:
+                        raise ValueError("Invalid chat message.")
+                    thread_id = payload.get("thread_id")
+                    if thread_id is None:
+                        thread_id = str(uuid4())
+                    elif not isinstance(thread_id, str):
+                        raise ValueError("Invalid thread_id.")
+                    else:
+                        try:
+                            thread_id = str(UUID(thread_id))
+                        except ValueError:
+                            raise ValueError("thread_id must be a UUID.") from None
+                    state = agent.invoke(
+                        {"message": message, "steps": 0, "observations": []},
+                        {"configurable": {"thread_id": thread_id}},
+                    )
+                    self._json(200, {"reply": state.get("reply", ""),
+                                     "status": state.get("status", "unknown"),
+                                     "citations": state.get("citations", []),
+                                     "thread_id": thread_id})
+                    return
                 question = payload.get("question")
                 filters = payload.get("filters", {})
                 if not isinstance(question, str) or not isinstance(filters, dict):
@@ -64,7 +99,8 @@ def _handler(pipeline: RagPipeline) -> type[BaseHTTPRequestHandler]:
 
 def serve() -> int:
     pipeline, llm, store = _build_pipeline()
-    server = HTTPServer(("127.0.0.1", 8765), _handler(pipeline))
+    agent = _build_agent(pipeline, llm)
+    server = HTTPServer(("127.0.0.1", 8765), _handler(pipeline, agent))
     print("San sang tai http://127.0.0.1:8765. Nhan Ctrl+C de dung.", file=sys.stderr)
     try:
         server.serve_forever()
