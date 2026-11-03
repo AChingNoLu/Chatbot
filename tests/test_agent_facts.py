@@ -27,6 +27,34 @@ class FactCollectorTests(unittest.TestCase):
         self.assertFalse(checked["verified"])
         self.assertEqual(checked["citations"], [])
 
+    def test_legal_bases_match_article_and_document(self):
+        result = {"result": {"days": "12"}, "legal_bases": [
+            {"document": "Bộ luật Lao động 2019", "article": "Điều 113",
+             "source": "DATA/Lao_Dong/luat/VBPLHN2026.docx"},
+            {"document": "Bộ luật Lao động 2019", "article": "Điều 114",
+             "source": "DATA/Lao_Dong/luat/VBPLHN2026.docx"}]}
+        def cite(article, source="DATA/Lao_Dong/luat/VBPLHN2026.docx"):
+            return {"chunk_id": article + source, "quote": "Trích nguyên văn",
+                    "doc_name": "Bộ luật Lao động 2019", "article": article,
+                    "source": source}
+        retrieval = {"status": "answered", "citations": [
+            cite("Điều 98"), cite("Điều 113"),
+            cite("Điều 114", "DATA/Dan_Su/luat/91_2015_QH13_296215.docx")]}
+        checked = validate_rule_result("calc_leave", result, retrieval)
+        self.assertEqual([c["article"] for c in checked["citations"]], ["Điều 113"])
+        self.assertFalse(checked["verified"])
+
+    def test_unmatched_citations_are_not_displayed(self):
+        result = {"result": {"days": "12"}, "legal_bases": [
+            {"document": "Bộ luật Lao động 2019", "article": "Điều 113",
+             "source": "DATA/Lao_Dong/luat/VBPLHN2026.docx"}]}
+        retrieval = {"status": "answered", "citations": [
+            {"chunk_id": "x", "quote": "Text", "doc_name": "Bộ luật Lao động 2019",
+             "article": "Điều 98", "source": "DATA/Lao_Dong/luat/VBPLHN2026.docx"}]}
+        checked = validate_rule_result("calc_leave", result, retrieval)
+        self.assertEqual(checked["citations"], [])
+        self.assertIn("Chưa tìm được căn cứ", checked["warnings"][1])
+
     def test_unverified_boolean_is_rejected(self):
         self.assertEqual(validate_user_arguments({"eligible": True}, ["có"]), ["eligible"])
 

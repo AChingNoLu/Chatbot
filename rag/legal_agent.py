@@ -47,6 +47,8 @@ def _render(tool: str, checked: dict[str, Any]) -> str:
     if citations:
         message += "\nCăn cứ đã truy xuất: " + "; ".join(
             f"{c.get('doc_name', 'Văn bản')} {c.get('article', '')}" for c in citations)
+    if not citations:
+        message += "\nChưa tìm được căn cứ truy xuất khớp điều luật của phép tính."
     message += "\nLưu ý: chưa xác minh đầy đủ hiệu lực, xung đột văn bản và điều kiện áp dụng."
     return message
 
