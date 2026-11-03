@@ -40,27 +40,45 @@ def ask_for_field(tool: str, field: str) -> str:
     return descriptions.get(field, f"Vui lòng cung cấp {field}.{hint}")
 
 
-def _number(value: str, quote: str, field: str) -> float | None:
-    raw = value.strip().replace(" ", "").replace(",", ".")
+def _parse_decimal(token: str) -> float | None:
+    token = token.strip().replace(" ", "")
+    if not re.fullmatch(r"\\d+(?:[.,]\\d+)*", token):
+        return None
+    if re.fullmatch(r"\\d{1,3}(?:[.,]\\d{3})+", token):
+        token = token.replace(".", "").replace(",", "")
+    elif token.count(".") + token.count(",") == 1:
+        token = token.replace(",", ".")
+    elif "." in token or "," in token:
+        return None
     try:
-        amount = float(raw)
+        return float(token)
     except ValueError:
         return None
-    if not math.isfinite(amount) or amount < 0:
-        return None
-    normalized = unicodedata.normalize("NFC", quote).casefold()
+
+
+def _number(value: str, quote: str, field: str) -> float | None:
+    normalized = unicodedata.normalize("NFC", quote).casefold().strip()
+    if field == "annual_rate":
+        match = re.fullmatch(r"(\\d+(?:[.,]\\d+)?)\\s*%", normalized)
+        if match:
+            rate = _parse_decimal(match.group(1))
+            return rate / 100 if rate is not None else None
     if field in MONEY_FIELDS:
-        # Unit must be part of the quoted evidence; do not silently accept 10 triệu as 10 VND.
-        match = re.fullmatch(r"\s*([\d.,]+)\s*(triệu|trieu|tỷ|ty|nghìn|nghin|ngàn|ngan|vnd|đồng|đ)?\s*", normalized)
+        match = re.fullmatch(
+            r"([\\d.,]+)\\s*(triệu|trieu|tr|tỷ|ty|nghìn|nghin|ngàn|ngan|k|vnd|đồng|đ)?",
+            normalized)
         if not match:
             return None
-        stated = float(match.group(1).replace(",", "."))
+        stated = _parse_decimal(match.group(1))
+        if stated is None:
+            return None
         unit = match.group(2) or ""
         multiplier = (1_000_000_000 if unit in {"tỷ", "ty"} else
-                      1_000_000 if unit in {"triệu", "trieu"} else
-                      1_000 if unit in {"nghìn", "nghin", "ngàn", "ngan"} else 1)
-        return stated * multiplier if amount in {stated, stated * multiplier} else None
-    return amount if raw in quote.replace(",", ".") else None
+                      1_000_000 if unit in {"triệu", "trieu", "tr"} else
+                      1_000 if unit in {"nghìn", "nghin", "ngàn", "ngan", "k"} else 1)
+        return stated * multiplier
+    amount = _parse_decimal(normalized)
+    return amount if amount is not None else None
 
 
 def _value(field: str, spec: dict[str, Any], value: str, quote: str) -> Any:
