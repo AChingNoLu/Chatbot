@@ -149,7 +149,7 @@ def main() -> None:
     from rag.pipeline import request_answer
 
     llm = GroqClient()
-    graph = build_graph(request_answer, llm)
+    graph = build_graph(lambda question: request_answer(question, allow_legal_tool=True), llm)
     config = {"configurable": {"thread_id": str(uuid4())}}
     print("Legal agent: /huy để hủy, exit để thoát.")
     try:
