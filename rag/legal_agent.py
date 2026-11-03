@@ -127,7 +127,7 @@ def build_graph(answer: Callable[[str], dict[str, Any]], llm: Any,
         facts = dict(state.get("facts", {})) if state.get("tool") == name else {}
         pending = state.get("pending") if state.get("tool") == name else None
         facts.update(extract_explicit(state["message"], name, llm, pending=pending))
-        missing = missing_fields(name, facts)
+        if name == "calc_late_payment" and state["message"].strip().casefold() in {"mặc định", "mac dinh", "dùng mặc định"}:\n            facts["annual_rate"] = 0.10\n        missing = missing_fields(name, facts)
         if name in {"calc_severance", "calc_job_loss"}:
             missing = [key for key in missing if key != "eligible"]
         if missing:
