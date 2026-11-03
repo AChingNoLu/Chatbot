@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 import re
 import unicodedata
+from pathlib import PurePosixPath
 
 
 def _norm(value: Any) -> str:
@@ -17,16 +18,21 @@ def _norm(value: Any) -> str:
 def _article(value: Any) -> str:
     """Accept 'Điều 113', '113' or 'Article 113', but not '113/114'."""
     normalized = _norm(value)
-    match = re.fullmatch(r"(?:(?:điều|article)\\s*)?(\\d+[a-zđ]?)", normalized)
+    match = re.fullmatch(r"(?:(?:điều|article)\s*)?(\d+[a-zđ]?)", normalized)
     return match.group(1) if match else ""
 
 
+def _stem(value: Any) -> str:
+    text = _norm(value).replace(chr(92), "/")
+    return PurePosixPath(text).stem if text else ""
+
+
 def _same_document(citation: dict[str, Any], basis: dict[str, Any]) -> bool:
-    # The canonical source path is strongest; document title is a fallback.
-    source = _norm(citation.get("source"))
-    expected_source = _norm(basis.get("source"))
-    if source and expected_source:
-        return source.replace("\\\\", "/") == expected_source.replace("\\\\", "/")
+    expected = _stem(basis.get("source"))
+    actual = _stem(citation.get("source")) or _stem(citation.get("source_file"))
+    if expected and actual:
+        return expected == actual
+    # Only fall back to document titles when at least one source is absent.
     title = _norm(citation.get("doc_name"))
     expected_title = _norm(basis.get("document"))
     return bool(title and expected_title and title == expected_title)

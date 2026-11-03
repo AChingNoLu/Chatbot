@@ -44,6 +44,19 @@ class FactCollectorTests(unittest.TestCase):
         self.assertEqual([c["article"] for c in checked["citations"]], ["Điều 113"])
         self.assertFalse(checked["verified"])
 
+    def test_windows_absolute_source_and_filename_title(self):
+        result = {"result": {"days": "12"}, "legal_bases": [
+            {"document": "Bộ luật Lao động 2019 (VBHN 2026)",
+             "article": "Điều 113", "source": "DATA/Lao_Dong/luat/VBPLHN2026.docx"}]}
+        path = "C:\\\\Users\\\\Admin\\\\Downloads\\\\vbPLsua1\\\\DATA\\\\Lao_Dong\\\\luat\\\\VBPLHN2026.docx"
+        retrieval = {"status": "answered", "citations": [
+            {"chunk_id": "c113", "quote": "Trích đoạn", "doc_name": "VBPLHN2026",
+             "article": "Điều 113", "source": path},
+            {"chunk_id": "c98", "quote": "Trích đoạn", "doc_name": "VBPLHN2026",
+             "article": "Điều 98", "source": path}]}
+        checked = validate_rule_result("calc_leave", result, retrieval)
+        self.assertEqual([c["chunk_id"] for c in checked["citations"]], ["c113"])
+
     def test_unmatched_citations_are_not_displayed(self):
         result = {"result": {"days": "12"}, "legal_bases": [
             {"document": "Bộ luật Lao động 2019", "article": "Điều 113",
