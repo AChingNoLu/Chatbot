@@ -1,7 +1,6 @@
-"""Bounded LangGraph legal agent with schema-based fact collection."""
+"""Bounded legal agent with grounded RAG and multi-turn calculation tools."""
 from __future__ import annotations
 
-import json
 from typing import Any, Callable, TypedDict
 from uuid import uuid4
 
@@ -14,16 +13,17 @@ from validator.legal_validator import validate_rule_result
 
 MAX_STEPS = 4
 SYSTEM = (
-    "Bạn là agent hỗ trợ pháp luật Việt Nam. Chỉ chọn công cụ có trong danh sách. "
-    "Không tự suy đoán dữ kiện, kết luận điều kiện hưởng hoặc tự tạo citation. "
-    "Ưu tiên retrieve_law khi cần căn cứ. Khi đủ thông tin, trả lời ngắn gọn; "
-    "nếu thiếu dữ kiện hãy để hệ thống hỏi. Không lặp lại truy vấn đã thực hiện."
+    "Bạn là trợ lý pháp luật. Chọn công cụ phù hợp; dùng retrieve_law cho tra cứu "
+    "và calc_* cho phép tính. Không suy đoán dữ kiện, hiệu lực hoặc citation. "
+    "Nếu người dùng chỉ chào hỏi, trả lời lời chào ngắn."
 )
+BLOCKED = {"calc_severance", "calc_job_loss", "calc_insurance", "calc_deposit"}
+GREETINGS = {"hi", "hello", "xin chào", "chào", "chào bạn"}
 
 
 class AgentState(TypedDict, total=False):
     message: str
-    history: list[dict[str, Any]]
+    history: list[dict[str, str]]
     tool: str
     facts: dict[str, Any]
     pending: str
@@ -32,88 +32,101 @@ class AgentState(TypedDict, total=False):
     observations: list[dict[str, Any]]
     reply: str
     status: str
+    citations: list[dict[str, Any]]
+
+
+def _render(tool: str, checked: dict[str, Any]) -> str:
+    values = checked["result"]["result"]
+    label = {"calc_leave": "Số ngày nghỉ hằng năm", "calc_overtime": "Tiền làm thêm giờ",
+             "calc_late_payment": "Tiền lãi chậm trả"}.get(tool, "Kết quả tính")
+    primary = values.get("days", values.get("amount", values.get("interest_amount")))
+    unit = " ngày" if tool == "calc_leave" else " VND"
+    message = f"{label}: {primary}{unit}." if primary is not None else f"{label}: {values}."
+    citations = checked["citations"]
+    if citations:
+        message += "\nCăn cứ đã truy xuất: " + "; ".join(
+            f"{c.get('doc_name', 'Văn bản')} {c.get('article', '')}" for c in citations)
+    message += "\nLưu ý: chưa xác minh đầy đủ hiệu lực, xung đột văn bản và điều kiện áp dụng."
+    return message
 
 
 def build_graph(answer: Callable[[str], dict[str, Any]], llm: Any,
                 *, checkpointer: Any = None):
-    """Call RAG through the existing local server, preserving its quote checks."""
     schemas = tool_schemas()
     names = {item["function"]["name"] for item in schemas}
+
+    def record(state: AgentState, reply: str, status: str, **changes: Any) -> AgentState:
+        history = list(state.get("history", []))
+        history.extend([{"role": "user", "content": state["message"]},
+                        {"role": "assistant", "content": reply}])
+        return {"reply": reply, "status": status, "history": history[-20:], **changes}
 
     def plan(state: AgentState) -> AgentState:
         message = state.get("message", "").strip()
         if not message:
             raise ValueError("Vui lòng nhập câu hỏi pháp luật.")
-        steps = state.get("steps", 0)
-        if steps >= MAX_STEPS:
-            return {"status": "step_limit", "reply": "Đã đạt giới hạn tra cứu. Vui lòng đặt câu hỏi cụ thể hơn."}
+        if message.casefold() in {"/huy", "/cancel", "hủy"}:
+            return record(state, "Đã hủy yêu cầu đang thu thập.", "cancelled",
+                          tool="", pending="", facts={}, observations=[], steps=0)
+        if state.get("steps", 0) >= MAX_STEPS:
+            return record(state, "Đã đạt giới hạn tra cứu.", "step_limit")
         if state.get("tool") and state.get("pending"):
-            return {"proposed": {"name": state["tool"], "arguments": state.get("facts", {})},
-                    "status": "execute"}
-        history = state.get("history", [])[-10:]
-        observations = state.get("observations", [])
+            return {"proposed": {"name": state["tool"]}, "status": "execute"}
+        if message.casefold() in GREETINGS:
+            return record(state, "Xin chào! Bạn cần tra cứu vấn đề pháp luật nào?", "chitchat")
         messages = [{"role": "system", "content": SYSTEM}]
-        messages.extend(history)
+        messages.extend(state.get("history", [])[-10:])
         messages.append({"role": "user", "content": message})
-        if observations:
-            messages.append({"role": "system", "content": json.dumps(
-                {"observations": observations[-MAX_STEPS:]}, ensure_ascii=False, default=str)})
-        result = llm.chat_with_tools(messages, schemas)
-        calls = result.get("tool_calls") or []
+        response = llm.chat_with_tools(messages, schemas)
+        calls = response.get("tool_calls") or []
         if not calls:
-            # Free-form model text is not a grounded legal conclusion.
-            return {"reply": "Chưa đủ căn cứ để đưa ra kết luận pháp lý. Vui lòng cung cấp câu hỏi cụ thể hơn.",
-                    "status": "insufficient_context"}
+            return record(state, "Chưa đủ căn cứ để kết luận. Bạn có thể hỏi cụ thể hơn?", "insufficient_context")
         call = calls[0]["function"]
-        name = call["name"]
-        if name not in names:
-            return {"reply": "Công cụ không được hỗ trợ.", "status": "unsupported_tool"}
-        return {"proposed": {"name": name, "arguments": call["arguments"]},
-                "status": "execute"}
+        if call["name"] not in names:
+            return record(state, "Công cụ không được hỗ trợ.", "unsupported_tool")
+        return {"proposed": {"name": call["name"], "arguments": call["arguments"]}, "status": "execute"}
 
     def execute(state: AgentState) -> AgentState:
-        proposed = state["proposed"]
-        name, suggested = proposed["name"], proposed["arguments"]
+        name = state["proposed"]["name"]
         steps = state.get("steps", 0) + 1
         observations = list(state.get("observations", []))
         if name == "retrieve_law":
-            query = suggested.get("query", "")
+            query = state["proposed"].get("arguments", {}).get("query", "")
             if not isinstance(query, str) or not query.strip():
-                return {"reply": "Thiếu truy vấn tra cứu.", "status": "needs_facts"}
-            if any(o.get("query") == query for o in observations):
-                return {"reply": "Không có thêm căn cứ từ truy vấn trùng lặp.",
-                        "status": "insufficient_context", "steps": steps}
+                return record(state, "Thiếu truy vấn tra cứu.", "needs_facts", steps=steps)
+            if any(item.get("query") == query for item in observations):
+                return record(state, "Không có thêm căn cứ từ truy vấn trùng.", "insufficient_context", steps=steps)
             result = execute_tool(name, {"query": query}, retrieve=answer)
-            observations.append({"tool": name, "query": query, "status": result.get("status"),
-                                 "answer": result.get("answer"), "citations": result.get("citations", [])})
+            observations.append({"tool": name, "query": query, "status": result.get("status")})
             if result.get("status") == "answered":
-                return {"reply": result["answer"], "status": "answered",
-                        "observations": observations, "steps": steps}
+                return record(state, result["answer"], "answered", observations=observations,
+                              citations=result.get("citations", []), steps=steps)
+            if result.get("status") == "chitchat":
+                return record(state, result["answer"], "chitchat", steps=steps)
             return {"observations": observations, "steps": steps, "status": "continue"}
 
-        facts = {**(state.get("facts", {}) if state.get("tool") == name else {})}
-        # Never accept model-generated numerical or legal facts as verified.
+        facts = dict(state.get("facts", {})) if state.get("tool") == name else {}
         pending = state.get("pending") if state.get("tool") == name else None
-        extracted = extract_explicit(state["message"], name, llm, pending=pending)
-        facts.update(extracted)
+        facts.update(extract_explicit(state["message"], name, llm, pending=pending))
         missing = missing_fields(name, facts)
+        if name in {"calc_severance", "calc_job_loss"}:
+            missing = [key for key in missing if key != "eligible"]
         if missing:
             field = missing[0]
-            return {"tool": name, "facts": facts, "pending": field,
-                    "reply": ask_for_field(name, field), "status": "needs_facts",
-                    "steps": steps}
-        # Eligibility and rate selection need a separate legal validator.
-        if name in {"calc_severance", "calc_job_loss", "calc_insurance", "calc_deposit"}:
-            return {"tool": name, "facts": facts, "pending": "",
-                    "reply": "Chưa thể tính: cần xác minh điều kiện pháp lý và căn cứ áp dụng độc lập.",
-                    "status": "needs_legal_validation", "steps": steps}
+            return record(state, ask_for_field(name, field), "needs_facts",
+                          tool=name, facts=facts, pending=field, steps=steps)
+        if name in BLOCKED:
+            return record(state, "Chưa thể tính: cần xác minh điều kiện pháp lý và căn cứ áp dụng độc lập.",
+                          "needs_legal_validation", tool="", pending="", facts={}, steps=steps)
         result = execute_tool(name, facts)
-        checked = validate_rule_result(name, result)
+        # The retrieval response is the only source of citation; do not invent citations.
+        query = state["message"]
+        retrieval = answer(query)
+        checked = validate_rule_result(name, result, retrieval)
+        reply = _render(name, checked)
         observations.append({"tool": name, "result": checked})
-        return {"observations": observations, "steps": steps, "tool": "",
-                "facts": {}, "pending": "",
-                "reply": json.dumps(checked, ensure_ascii=False, default=str),
-                "status": "calculated_unverified"}
+        return record(state, reply, "calculated_unverified", tool="", pending="", facts={},
+                      observations=observations, citations=checked["citations"], steps=steps)
 
     def next_node(state: AgentState) -> str:
         if state.get("status") == "execute":
@@ -138,7 +151,7 @@ def main() -> None:
     llm = GroqClient()
     graph = build_graph(request_answer, llm)
     config = {"configurable": {"thread_id": str(uuid4())}}
-    print("Legal agent: nhập exit để thoát.")
+    print("Legal agent: /huy để hủy, exit để thoát.")
     try:
         while True:
             message = input("Bạn: ").strip()
