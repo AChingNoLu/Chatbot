@@ -17,14 +17,14 @@ class RagPipeline:
     def __init__(self, router: Any, retriever: Any, llm: Any) -> None:
         self.router, self.retriever, self.llm = router, retriever, llm
 
-    def answer(self, question: str, **filters: Any) -> dict[str, Any]:
+    def answer(self, question: str, *, allow_legal_tool: bool = False, **filters: Any) -> dict[str, Any]:
         query = reflect_question(question)
         retrieved = retrieve_with_reflection(query, self.router, self.retriever, **filters)
         base = {**retrieved, "original_question": question}
         if retrieved["route"]["intent"] == "chitchat":
             return {**base, "answer": "Xin chào! Bạn muốn tra cứu vấn đề pháp luật nào?",
                     "citations": [], "status": "chitchat"}
-        if retrieved["route"]["intent"] == "legal_tool":
+        if retrieved["route"]["intent"] == "legal_tool" and not allow_legal_tool:
             return {**base, "answer": INSUFFICIENT + " Yêu cầu này cần Rule Engine để tính hoặc xác định kết quả; module đó chưa được tích hợp.",
                     "citations": [], "status": "requires_rule_engine"}
         prompt, sources = build_prompt(query, retrieved["top_5_after_rerank"])
