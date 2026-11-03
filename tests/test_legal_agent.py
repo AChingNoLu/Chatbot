@@ -1,56 +1,56 @@
-"""Offline checks for the unified legal-agent entry point."""
-
-import sys
+"""Offline tests for the bounded legal agent."""
 import unittest
-from pathlib import Path
+from uuid import uuid4
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from rag.leave_agent import build_graph as build_leave_graph
 from rag.legal_agent import build_graph
 
 
-class EmptyFactsLlm:
+class FakeLLM:
+    def chat_with_tools(self, messages, tools):
+        question = next(m["content"] for m in reversed(messages) if m["role"] == "user")
+        name = "calc_leave" if "nghỉ" in question else "retrieve_law"
+        return {"tool_calls": [{"function": {"name": name, "arguments":
+            {} if name == "calc_leave" else {"query": question}}}]}
+
     def generate(self, prompt, **kwargs):
-        return {field: {"value": "", "quote": ""}
-                for field in ("years_with_employer", "worked_months", "category")}
+        import json
+        fields = json.loads(prompt)["parameters"]
+        return {key: {"value": "", "quote": ""} for key in fields}
 
 
 class LegalAgentTests(unittest.TestCase):
-    def test_lookup_all_six_domains_and_leave_tool(self):
-        questions = [
-            "Điều kiện hợp đồng dân sự?", "Đăng ký tàu biển thế nào?",
-            "Tội trộm cắp tài sản?", "Quy định tiền lương?",
-            "Thời hạn kháng cáo dân sự?", "Quyền của bị can?",
-        ]
-        seen = []
+    def setUp(self):
+        self.queries = []
+        def answer(query):
+            self.queries.append(query)
+            return {"answer": "Trả lời có căn cứ", "status": "answered",
+                    "citations": [{"chunk_id": "c1", "quote": "Điều luật",
+                                   "doc_name": "Luật", "article": "Điều 1"}]}
+        self.graph = build_graph(answer, FakeLLM())
+        self.config = {"configurable": {"thread_id": str(uuid4())}}
 
-        def answer(question):
-            seen.append(question)
-            return {"answer": "Trả lời có căn cứ", "status": "answered"}
+    def invoke(self, message):
+        return self.graph.invoke({"message": message, "steps": 0,
+                                  "observations": []}, self.config)
 
-        graph = build_graph(answer, build_leave_graph(EmptyFactsLlm()))
-        config = {"configurable": {"thread_id": "all-domains"}}
-        for question in questions:
-            state = graph.invoke({"message": question}, config)
-            self.assertEqual(state["reply"], "Trả lời có căn cứ")
-            self.assertEqual(state["status"], "answered")
-        self.assertEqual(seen, questions)
+    def test_retrieval_and_greeting(self):
+        state = self.invoke("Điều kiện hợp đồng dân sự?")
+        self.assertEqual(state["status"], "answered")
+        self.assertEqual(state["reply"], "Trả lời có căn cứ")
+        self.assertEqual(len(state["citations"]), 1)
+        self.assertEqual(self.invoke("xin chào")["status"], "chitchat")
 
-        state = graph.invoke({"message": "/nghi-phep"}, config)
-        self.assertIn("bao nhiêu năm", state["reply"])
-        graph.invoke({"message": "5"}, config)
-        graph.invoke({"message": "12"}, config)
-        state = graph.invoke({"message": "1"}, config)
-        self.assertEqual(state["status"], "calculated")
-        self.assertIn("13 ngày", state["reply"])
-        graph.invoke({"message": questions[0]}, config)
-        self.assertEqual(seen[-1], questions[0])
+    def test_missing_facts_and_cancel(self):
+        state = self.invoke("Tính nghỉ phép")
+        self.assertEqual(state["status"], "needs_facts")
+        self.assertIn("worked_months", state["pending"])
+        state = self.invoke("/huy")
+        self.assertEqual(state["status"], "cancelled")
+        self.assertEqual(state["tool"], "")
 
-    def test_empty_question_is_rejected(self):
-        graph = build_graph(lambda _: {}, build_leave_graph(EmptyFactsLlm()))
+    def test_empty_question(self):
         with self.assertRaisesRegex(ValueError, "Vui lòng nhập"):
-            graph.invoke({"message": "  "}, {"configurable": {"thread_id": "empty"}})
+            self.invoke(" ")
 
 
 if __name__ == "__main__":
