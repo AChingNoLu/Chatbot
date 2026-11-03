@@ -42,9 +42,9 @@ def ask_for_field(tool: str, field: str) -> str:
 
 def _parse_decimal(token: str) -> float | None:
     token = token.strip().replace(" ", "")
-    if not re.fullmatch(r"\\d+(?:[.,]\\d+)*", token):
+    if not re.fullmatch(r"\d+(?:[.,]\d+)*", token):
         return None
-    if re.fullmatch(r"\\d{1,3}(?:[.,]\\d{3})+", token):
+    if re.fullmatch(r"\d{1,3}(?:[.,]\d{3})+", token):
         token = token.replace(".", "").replace(",", "")
     elif token.count(".") + token.count(",") == 1:
         token = token.replace(",", ".")
@@ -59,13 +59,13 @@ def _parse_decimal(token: str) -> float | None:
 def _number(value: str, quote: str, field: str) -> float | None:
     normalized = unicodedata.normalize("NFC", quote).casefold().strip()
     if field == "annual_rate":
-        match = re.fullmatch(r"(\\d+(?:[.,]\\d+)?)\\s*%", normalized)
+        match = re.fullmatch(r"(\d+(?:[.,]\d+)?)\s*%", normalized)
         if match:
             rate = _parse_decimal(match.group(1))
             return rate / 100 if rate is not None else None
     if field in MONEY_FIELDS:
         match = re.fullmatch(
-            r"([\\d.,]+)\\s*(triệu|trieu|tr|tỷ|ty|nghìn|nghin|ngàn|ngan|k|vnd|đồng|đ)?",
+            r"([\d.,]+)\s*(triệu|trieu|tr|tỷ|ty|nghìn|nghin|ngàn|ngan|k|vnd|đồng|đ)?",
             normalized)
         if not match:
             return None
