@@ -34,6 +34,7 @@ def ask_for_field(tool: str, field: str) -> str:
         "category": "Nhóm công việc: 1 - bình thường; 2 - nặng nhọc/độc hại; 3 - đặc biệt nặng nhọc?",
         "years_with_employer": "Bạn đã làm việc cho cùng người sử dụng lao động bao nhiêu năm?",
         "average_salary": "Mức lương bình quân là bao nhiêu VND? (ví dụ: 10 triệu)",
+        "annual_rate": "Bạn muốn dùng lãi suất nào (ví dụ 8%) hay mặc định 10%/năm?",
     }
     spec = SCHEMAS[tool]["properties"][field]
     hint = " Chọn: " + ", ".join(spec["enum"]) if "enum" in spec else ""

@@ -50,7 +50,7 @@ _DEFINITIONS: dict[str, tuple[str, str, dict[str, Any]]] = {
     "calc_late_payment": ("legal_tools.dan_su.late_payment", "Tính lãi chậm trả",
         _schema({"principal": _NUMBER, "overdue_days": _NUMBER,
                  "annual_rate": {**_NUMBER, "maximum": 0.2},
-                 "currency": _STRING}, ["principal", "overdue_days"])),
+                 "currency": _STRING}, ["principal", "overdue_days", "annual_rate"])),
     "retrieve_law": ("", "Tra cứu văn bản pháp luật và chứng cứ trong RAG",
         _schema({"query": {"type": "string", "minLength": 1}}, ["query"])),
 }

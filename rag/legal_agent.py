@@ -68,13 +68,13 @@ def build_graph(answer: Callable[[str], dict[str, Any]], llm: Any,
             raise ValueError("Vui lòng nhập câu hỏi pháp luật.")
         if message.casefold() in {"/huy", "/cancel", "hủy"}:
             return record(state, "Đã hủy yêu cầu đang thu thập.", "cancelled",
-                          tool="", pending="", facts={}, observations=[], steps=0)
+                          tool="", pending="", facts={}, observations=[], steps=0, original_query=""
         if state.get("steps", 0) >= MAX_STEPS:
             return record(state, "Đã đạt giới hạn tra cứu.", "step_limit")
         if state.get("tool") and state.get("pending"):
             if "?" in message or message.casefold().startswith(("tôi muốn hỏi", "cho tôi hỏi", "thế còn", "còn nếu")):
                 return record(state, "Đã chuyển sang câu hỏi mới. Vui lòng gửi lại câu hỏi để bắt đầu.", "cancelled",
-                              tool="", pending="", facts={}, observations=[], steps=0)
+                              tool="", pending="", facts={}, observations=[], steps=0, original_query=""
             return {"proposed": {"name": state["tool"]}, "status": "execute"}
         if message.casefold() in GREETINGS:
             return record(state, "Xin chào! Bạn cần tra cứu vấn đề pháp luật nào?", "chitchat")
@@ -127,7 +127,7 @@ def build_graph(answer: Callable[[str], dict[str, Any]], llm: Any,
         facts = dict(state.get("facts", {})) if state.get("tool") == name else {}
         pending = state.get("pending") if state.get("tool") == name else None
         facts.update(extract_explicit(state["message"], name, llm, pending=pending))
-        if name == "calc_late_payment" and state["message"].strip().casefold() in {"mặc định", "mac dinh", "dùng mặc định"}:
+        if name == "calc_late_payment" and pending == "annual_rate" and state["message"].strip().casefold() in {"mặc định", "mac dinh", "dùng mặc định"}:
             facts["annual_rate"] = 0.10
         missing = missing_fields(name, facts)
         if name in {"calc_severance", "calc_job_loss"}:
@@ -141,29 +141,39 @@ def build_graph(answer: Callable[[str], dict[str, Any]], llm: Any,
                           "needs_legal_validation", tool="", pending="", facts={}, steps=steps)
         result = execute_tool(name, facts)
         # The retrieval response is the only source of citation; do not invent citations.
-        query = state["message"]
-        retrieval = answer(query)
+        query = state.get("original_query") or state["message"]
+        try:
+            retrieval = answer(query)
+        except RuntimeError:
+            retrieval = None
         checked = validate_rule_result(name, result, retrieval)
         reply = _render(name, checked)
         if retrieval is None:
-            reply += "\\nKhông lấy được căn cứ từ RAG; kết quả tính chỉ mang tính tham khảo."
+            reply += "\nKhông lấy được căn cứ từ RAG; kết quả tính chỉ mang tính tham khảo."
         observations.append({"tool": name, "result": checked})
         return record(state, reply, "calculated_unverified", tool="", pending="", facts={},
-                      observations=observations, citations=checked["citations"], steps=steps)
+                      observations=observations, citations=checked["citations"], steps=steps,
+                      original_query="")
 
     def next_node(state: AgentState) -> str:
         if state.get("status") == "execute":
             return "execute"
         if state.get("status") == "continue" and state.get("steps", 0) < MAX_STEPS:
             return "plan"
-        return "end"
+        return "finish" if state.get("status") == "continue" else "end"
+
+    def finish(state: AgentState) -> AgentState:
+        from rag.prompt import INSUFFICIENT
+        return record(state, INSUFFICIENT, "insufficient_context", steps=state.get("steps", 0))
 
     graph = StateGraph(AgentState)
     graph.add_node("plan", plan)
     graph.add_node("execute", execute)
+    graph.add_node("finish", finish)
     graph.add_edge(START, "plan")
-    graph.add_conditional_edges("plan", next_node, {"execute": "execute", "end": END})
-    graph.add_conditional_edges("execute", next_node, {"plan": "plan", "end": END})
+    graph.add_conditional_edges("plan", next_node, {"execute": "execute", "finish": "finish", "end": END})
+    graph.add_conditional_edges("execute", next_node, {"plan": "plan", "finish": "finish", "end": END})
+    graph.add_edge("finish", END)
     return graph.compile(checkpointer=checkpointer or InMemorySaver())
 
 
